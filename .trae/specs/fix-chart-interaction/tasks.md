@@ -16,10 +16,10 @@
   - [x] SubTask 3.2: 确认 `predictors.length === 30` 且 `computeMethodStats` 返回 30 项
   - [x] SubTask 3.3: 确认权重条形图 `drawWeightBars` 接收 30 项并正确渲染（canvas 高度自适应）
 
-- [ ] Task 4: 验证 GitHub 仓库分支并推送修复
-  - [x] SubTask 4.1: 检查 `github-remote`（pixel-predictor）和 `origin`（predicted_value）哪个有 GitHub Pages — pixel-predictor 同时有 main + gh-pages 分支
-  - [ ] SubTask 4.2: 确保代码推送到正确的 main 和 gh-pages 分支
-  - [ ] SubTask 4.3: 如果两个仓库都需要更新，同时推送
+- [x] Task 4: 验证 GitHub 仓库分支并推送修复
+  - [x] SubTask 4.1: 检查 `github-remote`（pixel-predictor）和 `origin`（predicted_value）哪个有 GitHub Pages — pixel-predictor 同时有 main + gh-pages 分支，是真正的部署仓库；origin（predicted_value）停留在 Initial commit，未启用 Pages
+  - [x] SubTask 4.2: 确保代码推送到正确的 main 和 gh-pages 分支 — 两者均已推送到 `1506820`
+  - [x] SubTask 4.3: 如果两个仓库都需要更新，同时推送 — 仅 pixel-predictor 需要更新（已推送），origin 不需要
 
 # Task Dependencies
 - [Task 2] depends on [Task 1]（共享 chart.js 交互代码）
