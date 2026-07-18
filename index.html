@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>像素预测器 PIXEL PREDICTOR</title>
+  <link rel="stylesheet" href="styles/pixel.css">
+</head>
+<body>
+  <header class="pixel-panel" style="text-align:center; margin:20px;">
+    <h1 class="pixel-title">像素预测器 PIXEL PREDICTOR</h1>
+    <p class="pixel-subtitle">输入数字序列 · 20 种数学方法预测 · 复古深空像素风</p>
+  </header>
+
+  <main class="layout">
+    <!-- LEFT MAIN AREA -->
+    <section class="main-area">
+      <!-- Input Panel -->
+      <div class="pixel-panel input-panel">
+        <h2>输入数字序列</h2>
+        <textarea id="input-series" class="pixel-input" rows="4" placeholder="输入数字，用空格/逗号/换行分隔，如：1, 2, 3, 5, 8, 13"></textarea>
+        <div class="button-row">
+          <button id="btn-predict" class="pixel-btn">预测</button>
+          <button id="btn-reset" class="pixel-btn">重置</button>
+          <button id="btn-export-json" class="pixel-btn">导出 JSON</button>
+          <button id="btn-export-csv" class="pixel-btn">导出 CSV</button>
+        </div>
+        <div class="weight-mode">
+          <span>权重模式：</span>
+          <label><input type="radio" name="weight-mode" value="backtest" checked> 回测权重</label>
+          <label><input type="radio" name="weight-mode" value="uniform"> 均匀权重</label>
+        </div>
+      </div>
+
+      <!-- Ensemble Result Panel -->
+      <div class="pixel-panel result-panel">
+        <h2>融合预测结果</h2>
+        <div id="ensemble-result" class="ensemble-display">— 等待输入 —</div>
+      </div>
+
+      <!-- Line Chart Panel -->
+      <div class="pixel-panel chart-panel">
+        <h2>折线图</h2>
+        <canvas id="line-chart" width="800" height="400"></canvas>
+      </div>
+    </section>
+
+    <!-- RIGHT SIDEBAR -->
+    <aside class="sidebar">
+      <!-- Weight Bars Panel -->
+      <div class="pixel-panel">
+        <h2>方法权重</h2>
+        <canvas id="weight-chart" width="400" height="500"></canvas>
+      </div>
+
+      <!-- Method List Panel -->
+      <div class="pixel-panel">
+        <h2>20 种方法详情</h2>
+        <div id="method-list" class="method-list">— 等待预测 —</div>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="pixel-panel" style="text-align:center; margin:20px;">
+    <p>© 2026 Pixel Predictor · MIT License · 复古深空像素风</p>
+  </footer>
+
+  <div id="toast" class="pixel-panel pixel-toast" style="display:none;"></div>
+
+  <!-- Scripts loaded at end of body, in this exact order -->
+  <script src="js/predictors.js"></script>
+  <script src="js/weights.js"></script>
+  <script src="js/chart.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

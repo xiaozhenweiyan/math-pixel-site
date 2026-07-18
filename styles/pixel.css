@@ -1,0 +1,415 @@
+/* ============================================================
+   像素预测器 PIXEL PREDICTOR — 复古深空像素风样式系统
+   Retro Deep-Space Pixel Theme
+   ============================================================ */
+
+/* ---------- CSS Variables ---------- */
+:root {
+  --bg-deep: #1a1a2e;
+  --bg-panel: #2d2d44;
+  --bg-cell: #1a1a2e;
+  --border: #ffffff;
+  --accent: #ffd700;
+  --shadow: rgba(0,0,0,0.4);
+  --font: "Courier New", Courier, monospace;
+
+  /* 像素方块色板 — 用于图表节点 / 方法分类 */
+  --pixel-dirt:   #8b4513; /* 泥土棕 */
+  --pixel-water:  #1e90ff; /* 水蓝 */
+  --pixel-leaf:   #228b22; /* 树叶绿 */
+  --pixel-fire:   #ff4500; /* 火红 */
+
+  /* 衍生 token（保持风格一致） */
+  --bg-panel-hover: #3d3d54;
+  --text-muted: #aaaaaa;
+  --border-thick: 3px;
+  --radius: 4px;
+  --shadow-hard: 4px 4px 0 var(--shadow);
+  --shadow-pressed: 2px 2px 0 var(--shadow);
+}
+
+/* ---------- Reset & Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-deep);
+  /* 微妙的像素网格底纹，增强复古深空氛围 */
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: #ffffff;
+  font-family: var(--font);
+  font-weight: bold;
+  letter-spacing: 1px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 让 main 占据剩余空间，把 footer 推到底部 */
+main.layout {
+  flex: 1 0 auto;
+}
+
+/* ---------- Pixel Panel (核心面板) ---------- */
+.pixel-panel {
+  background: var(--bg-panel);
+  border: var(--border-thick) solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  font-family: var(--font);
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: #fff;
+  padding: 16px;
+}
+
+/* ---------- Pixel Button ---------- */
+.pixel-btn {
+  background: var(--bg-panel);
+  border: var(--border-thick) solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  font-family: var(--font);
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: #fff;
+  padding: 8px 16px;
+  cursor: pointer;
+  display: inline-block;
+  transition: transform 0.05s, box-shadow 0.05s, background 0.05s;
+  user-select: none;
+}
+
+.pixel-btn:hover {
+  background: var(--bg-panel-hover);
+}
+
+.pixel-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: var(--shadow-pressed);
+}
+
+.pixel-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ---------- Pixel Input ---------- */
+.pixel-input {
+  background: var(--bg-cell);
+  border: var(--border-thick) solid var(--border);
+  border-radius: var(--radius);
+  color: #fff;
+  font-family: var(--font);
+  font-weight: bold;
+  letter-spacing: 1px;
+  padding: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  /* textarea 仅允许纵向拉伸，避免破坏布局 */
+  resize: vertical;
+}
+
+.pixel-input::placeholder {
+  color: #777777;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.pixel-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ---------- Pixel Title / Subtitle ---------- */
+.pixel-title {
+  font-size: 28px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  text-shadow: 2px 2px 0 var(--shadow);
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+}
+
+.pixel-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+/* ---------- Panel Headings ---------- */
+.pixel-panel h2 {
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.25);
+  text-shadow: 1px 1px 0 var(--shadow);
+}
+
+.pixel-panel p {
+  margin: 0;
+}
+
+/* ---------- Layout (Desktop 双栏 / Mobile 单栏) ---------- */
+.layout {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 20px;
+  padding: 0 20px;
+  align-items: start;
+}
+
+.main-area,
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0; /* 防止 canvas / 长内容撑破 grid */
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Button Row ---------- */
+.button-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Weight Mode (radio 组) ---------- */
+.weight-mode {
+  margin-top: 12px;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.weight-mode span {
+  color: #fff;
+}
+
+.weight-mode label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: #fff;
+}
+
+/* 像素风自定义 radio */
+.weight-mode input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  background: var(--bg-cell);
+  border: 2px solid var(--border);
+  border-radius: 2px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.05s, border-color 0.05s;
+}
+
+.weight-mode input[type="radio"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.weight-mode input[type="radio"]:checked::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 6px;
+  height: 6px;
+  background: var(--bg-deep);
+  border-radius: 1px;
+}
+
+.weight-mode input[type="radio"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Ensemble Display ---------- */
+.ensemble-display {
+  font-size: 32px;
+  color: var(--accent);
+  text-align: center;
+  padding: 20px;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 0 var(--shadow);
+  word-break: break-all;
+}
+
+/* ---------- Method List ---------- */
+.method-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 600px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.method-item {
+  background: var(--bg-cell);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  gap: 8px;
+}
+
+.method-item .method-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.method-item .method-value {
+  color: var(--accent);
+  flex: 0 0 auto;
+}
+
+.method-item .method-weight {
+  color: var(--text-muted);
+  flex: 0 0 auto;
+  font-size: 12px;
+}
+
+/* 像素风滚动条（适配 .method-list） */
+.method-list {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--bg-cell);
+}
+
+.method-list::-webkit-scrollbar {
+  width: 12px;
+}
+
+.method-list::-webkit-scrollbar-track {
+  background: var(--bg-cell);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.method-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border: 2px solid var(--bg-cell);
+  border-radius: 2px;
+}
+
+.method-list::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+.method-list::-webkit-scrollbar-corner {
+  background: var(--bg-cell);
+}
+
+/* ---------- Canvas ---------- */
+canvas {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  background: var(--bg-cell);
+  border: var(--border-thick) solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+}
+
+/* ---------- Toast ---------- */
+.pixel-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  z-index: 1000;
+  color: var(--accent);
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-align: center;
+  max-width: calc(100vw - 40px);
+  box-sizing: border-box;
+}
+
+/* ---------- Header / Footer ---------- */
+header.pixel-panel,
+footer.pixel-panel {
+  flex: 0 0 auto;
+}
+
+footer.pixel-panel p {
+  font-size: 13px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+/* ---------- 移动端微调 ---------- */
+@media (max-width: 600px) {
+  .pixel-title {
+    font-size: 22px;
+    letter-spacing: 1px;
+  }
+
+  .ensemble-display {
+    font-size: 24px;
+    padding: 14px;
+  }
+
+  .pixel-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  header.pixel-panel,
+  footer.pixel-panel {
+    margin: 12px !important;
+  }
+
+  .layout {
+    padding: 0 12px;
+    gap: 12px;
+  }
+}
+
+/* ---------- Reduced Motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .pixel-btn {
+    transition: none;
+  }
+}
