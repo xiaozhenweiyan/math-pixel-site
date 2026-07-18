@@ -443,16 +443,14 @@ const neuralNet = (function () {
         }
 
         var task = tasks[currentTask];
-        var loss = 0;
-        var epochsThisFrame = 0;
         var maxEpochs = MAX_EPOCHS_PER_STEP;
         var epoch = 0;
 
-        function trainFrame() {
-          // 每帧训练若干 epoch / train several epochs per frame
+        function frameWrapper() {
+          // 每帧训练若干 epoch，用 rAF 调度避免阻塞 UI
           var epochsPerFrame = 10;
           for (var e = 0; e < epochsPerFrame && epoch < maxEpochs; e++) {
-            loss = trainSample(task.input, task.target, lr);
+            trainSample(task.input, task.target, lr);
             epoch++;
           }
 
@@ -482,68 +480,7 @@ const neuralNet = (function () {
 
           animFrame++;
 
-          // 检查误差是否在容忍范围内 / check tolerance
-          if (error <= TOLERANCE) {
-            // 通过！进入下一组 / passed, move to next task
-            currentTask++;
-            if (onProgress) {
-              onProgress(currentTask, totalTasks,
-                'NN步骤 ' + currentTask + '/' + totalTasks + ' 通过 (误差:' + error.toFixed(4) + ')');
-            }
-            setTimeout(trainStep, 100);
-            return;
-          }
-
-          if (epoch >= maxEpochs) {
-            // 达到最大 epoch 仍未收敛，也进入下一组（避免卡死）
-            // max epochs reached without convergence, move on
-            currentTask++;
-            if (onProgress) {
-              onProgress(currentTask, totalTasks,
-                'NN步骤 ' + currentTask + '/' + totalTasks + ' 跳过 (误差:' + error.toFixed(4) + ')');
-            }
-            setTimeout(trainStep, 100);
-            return;
-          }
-
-          // 继续训练 / continue training
-          requestAnimationFrame(trainFrame);
-        }
-
-        requestAnimationFrame(frameWrapper);
-
-        function frameWrapper() {
-          // 用 requestAnimationFrame 调度避免阻塞 UI
-          var epochsPerFrame = 10;
-          for (var e = 0; e < epochsPerFrame && epoch < maxEpochs; e++) {
-            loss = trainSample(task.input, task.target, lr);
-            epoch++;
-          }
-
-          var out = forward(task.input);
-          var predNorm = out.a2[0];
-          var predDenorm = denormalize(predNorm, norm.mean, norm.std);
-          var error = Math.abs(predDenorm - task.actualVal);
-
-          var pulse = 0.5 + 0.5 * Math.sin(animFrame * 0.2);
-          drawNetwork(canvas, {
-            pulse: pulse,
-            inputActivations: task.input.map(function (v) {
-              return Math.min(1, Math.abs(v) * 0.5 + 0.3);
-            }),
-            hiddenActivations: out.a1.map(function (v) {
-              return Math.min(1, Math.abs(v) * 0.5 + 0.2);
-            }),
-            outputActivations: out.a2.map(function (v) {
-              return Math.min(1, Math.abs(v) * 0.5 + 0.3);
-            }),
-            stage: '步骤 ' + (currentTask + 1) + '/' + totalTasks +
-                   ' (目标误差≤' + TOLERANCE + ')',
-            loss: error
-          });
-
-          animFrame++;
-
+          // 误差在 ±0.1 内 → 通过，进入下一组 / within tolerance → pass
           if (error <= TOLERANCE) {
             currentTask++;
             if (onProgress) {
@@ -554,6 +491,7 @@ const neuralNet = (function () {
             return;
           }
 
+          // 达到最大 epoch 仍未收敛，也进入下一组（避免卡死）
           if (epoch >= maxEpochs) {
             currentTask++;
             if (onProgress) {
@@ -566,6 +504,8 @@ const neuralNet = (function () {
 
           requestAnimationFrame(frameWrapper);
         }
+
+        requestAnimationFrame(frameWrapper);
       }
 
       if (onProgress) onProgress(0, totalTasks, '神经网络渐进训练开始...');

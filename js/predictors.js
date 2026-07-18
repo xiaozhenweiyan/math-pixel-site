@@ -1,6 +1,6 @@
 /**
  * predictors.js
- * 20 种时间序列预测方法集合 (20 Time Series Prediction Methods)
+ * 30 种时间序列预测方法集合 (30 Time Series Prediction Methods)
  *
  * 通过 <script> 标签加载，导出全局变量 `predictors`。
  * 每个预测器对象结构 / Predictor object shape：
@@ -582,6 +582,194 @@ const predictors = (function () {
           var angle2 = TWO_PI * m2 * n / n; // = 2π·m2
           forecast += a[m2] * Math.cos(angle2) + b[m2] * Math.sin(angle2);
         }
+        return isFiniteNumber(forecast) ? forecast : null;
+      }
+    },
+
+    // ------------------------------------------------------------
+    // 新增方法 21-30 / Additional Methods
+    // ------------------------------------------------------------
+    {
+      id: 'seasonal_naive3',
+      name: '季节朴素3 Seasonal Naive(3)',
+      category: 'basic',
+      minLen: 4,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        // 周期 = 3，取前3个位置的值 / period=3
+        return series[series.length - 3];
+      }
+    },
+    {
+      id: 'exp_smooth_03',
+      name: '指数平滑(α=0.3) SES-0.3',
+      category: 'smoothing',
+      minLen: 2,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        var alpha = 0.3;
+        var s = series[0];
+        for (var i = 1; i < series.length; i++) {
+          s = alpha * series[i] + (1 - alpha) * s;
+        }
+        return isFiniteNumber(s) ? s : null;
+      }
+    },
+    {
+      id: 'exp_smooth_07',
+      name: '指数平滑(α=0.7) SES-0.7',
+      category: 'smoothing',
+      minLen: 2,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        var alpha = 0.7;
+        var s = series[0];
+        for (var i = 1; i < series.length; i++) {
+          s = alpha * series[i] + (1 - alpha) * s;
+        }
+        return isFiniteNumber(s) ? s : null;
+      }
+    },
+    {
+      id: 'sma5',
+      name: '5点移动平均 SMA-5',
+      category: 'smoothing',
+      minLen: 3,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        var n = series.length;
+        var window = Math.min(5, n);
+        var sum = 0;
+        for (var i = n - window; i < n; i++) sum += series[i];
+        var forecast = sum / window;
+        return isFiniteNumber(forecast) ? forecast : null;
+      }
+    },
+    {
+      id: 'poly4',
+      name: '四次多项式回归 Poly4',
+      category: 'regression',
+      minLen: 5,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        var n = series.length;
+        var xs = [], ys = [];
+        for (var i = 0; i < n; i++) { xs.push(i); ys.push(series[i]); }
+        var coef = polyFit(xs, ys, 4);
+        if (!coef) return null;
+        // 预测 x = n
+        var x = n;
+        var forecast = coef[0] + coef[1] * x + coef[2] * x * x +
+                       coef[3] * x * x * x + coef[4] * x * x * x * x;
+        return isFiniteNumber(forecast) ? forecast : null;
+      }
+    },
+    {
+      id: 'ar3',
+      name: '自回归 AR(3)',
+      category: 'autoregressive',
+      minLen: 5,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        // 模型：y[t] = c + φ1·y[t-1] + φ2·y[t-2] + φ3·y[t-3]
+        var n = series.length;
+        var X = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+        var Y = [0,0,0,0];
+        for (var t = 3; t < n; t++) {
+          var x1 = 1, x2 = series[t-1], x3 = series[t-2], x4 = series[t-3], yv = series[t];
+          X[0][0] += x1*x1; X[0][1] += x1*x2; X[0][2] += x1*x3; X[0][3] += x1*x4;
+          X[1][0] += x2*x1; X[1][1] += x2*x2; X[1][2] += x2*x3; X[1][3] += x2*x4;
+          X[2][0] += x3*x1; X[2][1] += x3*x2; X[2][2] += x3*x3; X[2][3] += x3*x4;
+          X[3][0] += x4*x1; X[3][1] += x4*x2; X[3][2] += x4*x3; X[3][3] += x4*x4;
+          Y[0] += x1*yv; Y[1] += x2*yv; Y[2] += x3*yv; Y[3] += x4*yv;
+        }
+        var sol = gaussianSolve(X, Y);
+        if (!sol) return null;
+        var c = sol[0], phi1 = sol[1], phi2 = sol[2], phi3 = sol[3];
+        var forecast = c + phi1 * series[n-1] + phi2 * series[n-2] + phi3 * series[n-3];
+        return isFiniteNumber(forecast) ? forecast : null;
+      }
+    },
+    {
+      id: 'harmonic_mean',
+      name: '调和平均 Harmonic Mean',
+      category: 'basic',
+      minLen: 2,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        // 检查零值和符号 / check zeros and signs
+        var sumInv = 0;
+        for (var i = 0; i < series.length; i++) {
+          if (series[i] === 0) return null;
+          sumInv += 1 / series[i];
+        }
+        var forecast = series.length / sumInv;
+        return isFiniteNumber(forecast) ? forecast : null;
+      }
+    },
+    {
+      id: 'cagr',
+      name: '复合增长率 CAGR',
+      category: 'other',
+      minLen: 3,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        var n = series.length;
+        // 检查首尾值 / check first and last
+        if (series[0] === 0 || series[n-1] === 0) return null;
+        if (series[0] < 0 || series[n-1] < 0) return null;
+        // CAGR = (last/first)^(1/(n-1)) - 1
+        var ratio = series[n-1] / series[0];
+        if (ratio <= 0) return null;
+        var cagr = Math.pow(ratio, 1 / (n - 1)) - 1;
+        var forecast = series[n-1] * (1 + cagr);
+        return isFiniteNumber(forecast) ? forecast : null;
+      }
+    },
+    {
+      id: 'log_linear',
+      name: '对数线性回归 Log-Linear',
+      category: 'regression',
+      minLen: 3,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        var n = series.length;
+        // 所有值必须为正 / all values must be positive
+        for (var i = 0; i < n; i++) {
+          if (series[i] <= 0) return null;
+        }
+        // 对 y 取对数后线性回归 / linear regression on log(y)
+        var logY = [];
+        for (var j = 0; j < n; j++) logY.push(Math.log(series[j]));
+        var sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+        for (var k = 0; k < n; k++) {
+          sumX += k; sumY += logY[k]; sumXY += k * logY[k]; sumX2 += k * k;
+        }
+        var denom = n * sumX2 - sumX * sumX;
+        if (Math.abs(denom) < 1e-12) return null;
+        var slope = (n * sumXY - sumX * sumY) / denom;
+        var intercept = (sumY - slope * sumX) / n;
+        var logForecast = intercept + slope * n;
+        var forecast = Math.exp(logForecast);
+        return isFiniteNumber(forecast) ? forecast : null;
+      }
+    },
+    {
+      id: 'weighted_last',
+      name: '末尾加权平均 Weighted-Last',
+      category: 'smoothing',
+      minLen: 3,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        var n = series.length;
+        // 对最后 n 个值加权，越近权重越大（指数递增）
+        var weightedSum = 0, weightSum = 0;
+        for (var i = 0; i < n; i++) {
+          var w = Math.pow(2, i); // 1, 2, 4, 8, ...
+          weightedSum += w * series[i];
+          weightSum += w;
+        }
+        var forecast = weightedSum / weightSum;
         return isFiniteNumber(forecast) ? forecast : null;
       }
     }
