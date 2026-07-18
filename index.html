@@ -9,7 +9,7 @@
 <body>
   <header class="pixel-panel" style="text-align:center; margin:20px;">
     <h1 class="pixel-title">像素预测器 PIXEL PREDICTOR</h1>
-    <p class="pixel-subtitle">输入数字序列 · 30 种数学方法预测 · 复古深空像素风</p>
+    <p class="pixel-subtitle">输入数字序列 · 40 种数学方法预测 · 复古深空像素风</p>
   </header>
 
   <main class="layout">
@@ -67,7 +67,7 @@
 
       <!-- Method List Panel -->
       <div class="pixel-panel">
-        <h2>30 种方法详情</h2>
+        <h2>40 种方法详情</h2>
         <div id="method-list" class="method-list">— 等待预测 —</div>
       </div>
     </aside>
@@ -97,6 +97,27 @@
         </div>
       </div>
     </div>
+
+    <div class="pixel-panel overfit-panel" id="overfit-panel" style="display:none; margin-top:16px;">
+      <h2>过拟合算法（独立，不参与融合）</h2>
+      <div class="overfit-content">
+        <div class="overfit-result" id="overfit-result">—</div>
+        <div class="overfit-details" id="overfit-details"></div>
+      </div>
+    </div>
+
+    <div class="pixel-panel offset-panel" id="offset-panel" style="display:none; margin-top:16px;">
+      <h2>偏移算法（独立，不参与融合）</h2>
+      <div class="offset-content">
+        <div class="offset-formula" id="offset-formula">f(x) = —</div>
+        <div class="offset-info">
+          <span id="offset-type">类型: —</span>
+          <span id="offset-r2">R²: —</span>
+          <span id="offset-exact">—</span>
+        </div>
+        <div class="offset-result" id="offset-result">预测: —</div>
+      </div>
+    </div>
   </div>
 
   <footer class="pixel-panel" style="text-align:center; margin:20px;">
@@ -110,6 +131,8 @@
   <script src="js/weights.js"></script>
   <script src="js/nn.js"></script>
   <script src="js/funcfit.js"></script>
+  <script src="js/overfit.js"></script>
+  <script src="js/offsetfit.js"></script>
   <script src="js/chart.js"></script>
   <script src="js/app.js"></script>
 </body>

@@ -1,6 +1,6 @@
 /**
  * predictors.js
- * 30 种时间序列预测方法集合 (30 Time Series Prediction Methods)
+ * 40 种时间序列预测方法集合 (40 Time Series Prediction Methods)
  *
  * 通过 <script> 标签加载，导出全局变量 `predictors`。
  * 每个预测器对象结构 / Predictor object shape：
@@ -770,6 +770,267 @@ const predictors = (function () {
           weightSum += w;
         }
         var forecast = weightedSum / weightSum;
+        return isFiniteNumber(forecast) ? forecast : null;
+      }
+    },
+
+    // ------------------------------------------------------------
+    // 新增方法 31-40 / Additional Methods (Negative-Safe)
+    // ------------------------------------------------------------
+    {
+      id: 'diff_extrap',
+      name: '差分外推 Diff Extrap',
+      category: 'autoregressive',
+      minLen: 3,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        var n = series.length;
+        var lastDiffs = [];
+        var current = series.slice();
+        while (current.length > 1) {
+          var allEqual = true;
+          var first = current[1] - current[0];
+          for (var i = 2; i < current.length; i++) {
+            if (current[i] - current[i - 1] !== first) { allEqual = false; break; }
+          }
+          var nextDiffs = [];
+          for (var j = 1; j < current.length; j++) {
+            nextDiffs.push(current[j] - current[j - 1]);
+          }
+          lastDiffs.push(nextDiffs[nextDiffs.length - 1]);
+          current = nextDiffs;
+          if (allEqual) break;
+        }
+        var forecast = series[n - 1];
+        for (var k = 0; k < lastDiffs.length; k++) {
+          forecast += lastDiffs[k];
+        }
+        return isFiniteNumber(forecast) ? forecast : null;
+      }
+    },
+    {
+      id: 'weighted_median',
+      name: '加权中位数 Weighted Median',
+      category: 'basic',
+      minLen: 2,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        var n = series.length;
+        var indexed = [];
+        for (var i = 0; i < n; i++) {
+          indexed.push({ value: series[i], weight: i + 1 });
+        }
+        indexed.sort(function (a, b) { return a.value - b.value; });
+        var totalWeight = 0;
+        for (var j = 0; j < n; j++) totalWeight += indexed[j].weight;
+        var half = totalWeight / 2;
+        var cumWeight = 0;
+        var median = null;
+        for (var k = 0; k < n; k++) {
+          cumWeight += indexed[k].weight;
+          if (cumWeight >= half) {
+            if (cumWeight === half && k < n - 1) {
+              median = (indexed[k].value + indexed[k + 1].value) / 2;
+            } else {
+              median = indexed[k].value;
+            }
+            break;
+          }
+        }
+        return isFiniteNumber(median) ? median : null;
+      }
+    },
+    {
+      id: 'recursive_avg',
+      name: '递推平均 Recursive Avg',
+      category: 'smoothing',
+      minLen: 2,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        var s = series[0];
+        for (var i = 1; i < series.length; i++) {
+          s = (s * i + series[i]) / (i + 1);
+        }
+        return isFiniteNumber(s) ? s : null;
+      }
+    },
+    {
+      id: 'sign_preserving',
+      name: '符号守恒 Sign-Preserving',
+      category: 'other',
+      minLen: 3,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        var n = series.length;
+        var absSeries = [];
+        for (var i = 0; i < n; i++) absSeries.push(Math.abs(series[i]));
+        var sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+        for (var j = 0; j < n; j++) {
+          sumX += j;
+          sumY += absSeries[j];
+          sumXY += j * absSeries[j];
+          sumX2 += j * j;
+        }
+        var denom = n * sumX2 - sumX * sumX;
+        if (Math.abs(denom) < 1e-12) return null;
+        var slope = (n * sumXY - sumX * sumY) / denom;
+        var intercept = (sumY - slope * sumX) / n;
+        var absForecast = intercept + slope * n;
+        if (!isFiniteNumber(absForecast)) return null;
+        var sign = series[n - 1] >= 0 ? 1 : -1;
+        var forecast = sign * Math.abs(absForecast);
+        return isFiniteNumber(forecast) ? forecast : null;
+      }
+    },
+    {
+      id: 'second_order',
+      name: '二阶趋势 Second Order',
+      category: 'regression',
+      minLen: 3,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        var n = series.length;
+        var d1 = [];
+        for (var i = 1; i < n; i++) d1.push(series[i] - series[i - 1]);
+        var m = d1.length;
+        var sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+        for (var j = 0; j < m; j++) {
+          sumX += j;
+          sumY += d1[j];
+          sumXY += j * d1[j];
+          sumX2 += j * j;
+        }
+        var denom = m * sumX2 - sumX * sumX;
+        if (Math.abs(denom) < 1e-12) return null;
+        var slope = (m * sumXY - sumX * sumY) / denom;
+        var intercept = (sumY - slope * sumX) / m;
+        var nextDiff = intercept + slope * m;
+        var forecast = series[n - 1] + nextDiff;
+        return isFiniteNumber(forecast) ? forecast : null;
+      }
+    },
+    {
+      id: 'moving_median',
+      name: '移动中位数 Moving Median',
+      category: 'smoothing',
+      minLen: 3,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        var n = series.length;
+        var window = Math.min(5, n);
+        var recent = [];
+        for (var i = n - window; i < n; i++) recent.push(series[i]);
+        var sorted = recent.sort(function (a, b) { return a - b; });
+        var median;
+        if (window % 2 === 1) {
+          median = sorted[(window - 1) / 2];
+        } else {
+          median = (sorted[window / 2 - 1] + sorted[window / 2]) / 2;
+        }
+        return isFiniteNumber(median) ? median : null;
+      }
+    },
+    {
+      id: 'triple_smooth',
+      name: '三次平滑 Triple Smooth',
+      category: 'smoothing',
+      minLen: 3,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        var current = series.slice();
+        for (var pass = 0; pass < 3; pass++) {
+          var smoothed = [];
+          var n = current.length;
+          var window = Math.min(3, n);
+          for (var i = 0; i < n; i++) {
+            var start = Math.max(0, i - Math.floor(window / 2));
+            var end = Math.min(n, start + window);
+            start = end - window;
+            if (start < 0) start = 0;
+            var sum = 0;
+            var count = 0;
+            for (var j = start; j < end; j++) {
+              sum += current[j];
+              count++;
+            }
+            smoothed.push(sum / count);
+          }
+          current = smoothed;
+        }
+        var forecast = current[current.length - 1];
+        return isFiniteNumber(forecast) ? forecast : null;
+      }
+    },
+    {
+      id: 'symmetric_proj',
+      name: '对称投影 Symmetric Proj',
+      category: 'other',
+      minLen: 3,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        var n = series.length;
+        var forecast = 2 * series[n - 1] - series[0];
+        return isFiniteNumber(forecast) ? forecast : null;
+      }
+    },
+    {
+      id: 'ratio_diff',
+      name: '比值差分 Ratio Diff',
+      category: 'autoregressive',
+      minLen: 3,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        var n = series.length;
+        var ratios = [];
+        for (var i = 1; i < n; i++) {
+          if (series[i - 1] !== 0) {
+            ratios.push(series[i] / series[i - 1]);
+          }
+        }
+        if (ratios.length < 2) return null;
+        var ratioDiffs = [];
+        for (var j = 1; j < ratios.length; j++) {
+          ratioDiffs.push(ratios[j] - ratios[j - 1]);
+        }
+        var lastRatioDiff = ratioDiffs.length > 0 ? ratioDiffs[ratioDiffs.length - 1] : 0;
+        var nextRatio = ratios[ratios.length - 1] + lastRatioDiff;
+        var forecast = series[n - 1] * nextRatio;
+        return isFiniteNumber(forecast) ? forecast : null;
+      }
+    },
+    {
+      id: 'abs_log_linear',
+      name: '绝对值对数线性 Abs Log-Lin',
+      category: 'regression',
+      minLen: 3,
+      predict: function (series) {
+        if (!validateSeries(series, this.minLen)) return null;
+        var n = series.length;
+        var allZero = true;
+        for (var i = 0; i < n; i++) {
+          if (series[i] !== 0) { allZero = false; break; }
+        }
+        if (allZero) return null;
+        var logAbs = [];
+        for (var j = 0; j < n; j++) {
+          logAbs.push(Math.log(Math.abs(series[j]) + 1));
+        }
+        var sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+        for (var k = 0; k < n; k++) {
+          sumX += k;
+          sumY += logAbs[k];
+          sumXY += k * logAbs[k];
+          sumX2 += k * k;
+        }
+        var denom = n * sumX2 - sumX * sumX;
+        if (Math.abs(denom) < 1e-12) return null;
+        var slope = (n * sumXY - sumX * sumY) / denom;
+        var intercept = (sumY - slope * sumX) / n;
+        var logForecast = intercept + slope * n;
+        var absForecast = Math.exp(logForecast) - 1;
+        if (!isFiniteNumber(absForecast)) return null;
+        var sign = series[n - 1] >= 0 ? 1 : -1;
+        var forecast = sign * Math.max(0, absForecast);
         return isFiniteNumber(forecast) ? forecast : null;
       }
     }

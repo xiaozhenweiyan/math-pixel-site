@@ -45,7 +45,9 @@
     ensemble: null,           // 当前融合预测（单值，兼容旧代码） number|null
     ensemblePredictions: [],  // 融合预测数组（多步） number[]
     nnPredictions: [],        // 神经网络预测值数组（多步） number[]
-    fitCurve: null            // 拟合曲线 { evaluate, degree, formula, domain, range, r2 } | null
+    fitCurve: null,           // 拟合曲线 { evaluate, degree, formula, domain, range, r2 } | null
+    overfitResult: null,      // 过拟合结果 { methods, ensemble, predictions } | null
+    offsetResult: null        // 偏移算法结果 { best, candidates, isExactMatch } | null
   };
 
   // 训练动画状态 / training animation state
@@ -180,6 +182,7 @@
             id: predictors[i].id,
             name: predictors[i].name,
             category: predictors[i].category,
+            minLen: predictors[i].minLen,
             prediction: preds[i],
             mape: computeSingleMape(predictors[i], workingSeries)
           });
@@ -418,6 +421,26 @@
       }
     }
 
+    // 过拟合算法 / overfitting algorithm
+    if (typeof overfitAlgo !== 'undefined' && overfitAlgo.fit) {
+      try {
+        state.overfitResult = overfitAlgo.fit(series);
+      } catch (e) {
+        console.warn('[app] overfit failed:', e);
+        state.overfitResult = null;
+      }
+    }
+
+    // 偏移算法 / offset fitting algorithm
+    if (typeof offsetFit !== 'undefined' && offsetFit.fit) {
+      try {
+        state.offsetResult = offsetFit.fit(series);
+      } catch (e) {
+        console.warn('[app] offset fit failed:', e);
+        state.offsetResult = null;
+      }
+    }
+
     // 先渲染数学方法结果 / render math methods first
     renderAll();
 
@@ -457,6 +480,8 @@
     renderWeightBars();
     renderNNResult();
     renderFunctionFit();
+    renderOverfit();
+    renderOffset();
   }
 
   /**
@@ -531,6 +556,118 @@
   }
 
   /**
+   * renderOverfit()
+   * 渲染过拟合算法面板。
+   * 使用 DOM API，绝不使用 innerHTML。
+   */
+  function renderOverfit() {
+    const panel = document.getElementById('overfit-panel');
+    const resultEl = document.getElementById('overfit-result');
+    const detailsEl = document.getElementById('overfit-details');
+    if (!panel) return;
+
+    const or = state.overfitResult;
+    if (!or) {
+      panel.style.display = 'none';
+      return;
+    }
+    panel.style.display = 'block';
+
+    if (resultEl) {
+      resultEl.textContent = formatNumber(or.ensemble);
+    }
+
+    if (detailsEl) {
+      while (detailsEl.firstChild) {
+        detailsEl.removeChild(detailsEl.firstChild);
+      }
+
+      let totalWeight = 0;
+      if (or.methods) {
+        for (let i = 0; i < or.methods.length; i++) {
+          totalWeight += or.methods[i].weight || 0;
+        }
+      }
+
+      if (or.methods) {
+        for (let i = 0; i < or.methods.length; i++) {
+          const m = or.methods[i];
+          const item = document.createElement('div');
+          item.className = 'overfit-item';
+
+          const nameEl = document.createElement('span');
+          nameEl.className = 'of-name';
+          nameEl.textContent = m.name;
+
+          const rightEl = document.createElement('span');
+          rightEl.style.display = 'flex';
+          rightEl.style.alignItems = 'center';
+
+          const valEl = document.createElement('span');
+          valEl.className = 'of-value';
+          valEl.textContent = formatNumber(m.prediction);
+
+          const weightEl = document.createElement('span');
+          weightEl.className = 'of-weight';
+          if (totalWeight > 0) {
+            weightEl.textContent = ((m.weight || 0) / totalWeight * 100).toFixed(1) + '%';
+          } else {
+            weightEl.textContent = '—';
+          }
+
+          rightEl.appendChild(valEl);
+          rightEl.appendChild(weightEl);
+
+          item.appendChild(nameEl);
+          item.appendChild(rightEl);
+          detailsEl.appendChild(item);
+        }
+      }
+    }
+  }
+
+  /**
+   * renderOffset()
+   * 渲染偏移算法面板。
+   */
+  function renderOffset() {
+    const panel = document.getElementById('offset-panel');
+    const formulaEl = document.getElementById('offset-formula');
+    const typeEl = document.getElementById('offset-type');
+    const r2El = document.getElementById('offset-r2');
+    const exactEl = document.getElementById('offset-exact');
+    const resultEl = document.getElementById('offset-result');
+    if (!panel) return;
+
+    const os = state.offsetResult;
+    if (!os || !os.best) {
+      panel.style.display = 'none';
+      return;
+    }
+    panel.style.display = 'block';
+
+    const best = os.best;
+    if (formulaEl) formulaEl.textContent = best.formula || 'f(x) = —';
+    if (typeEl) typeEl.textContent = '类型: ' + (best.functionName || '—');
+    if (r2El) {
+      const r2 = best.rSquared;
+      r2El.textContent = 'R²: ' + (typeof r2 === 'number' && isFinite(r2) ? r2.toFixed(4) : '—');
+    }
+    if (exactEl) {
+      if (os.isExactMatch) {
+        exactEl.textContent = '✓ 精确匹配';
+        exactEl.className = 'exact-match';
+      } else {
+        exactEl.textContent = '最接近';
+        exactEl.className = 'closest-match';
+      }
+    }
+    if (resultEl) {
+      resultEl.textContent = '预测: ' + formatNumber(best.prediction);
+    }
+  }
+
+  /**
    * renderMethodList()
    * 渲染方法详情列表（使用 DOM API，绝不使用 innerHTML）。
    */
@@ -570,9 +707,16 @@
       // 预测值 / prediction
       const val = document.createElement('span');
       val.className = 'method-value';
-      val.textContent = (m.prediction === null || m.prediction === undefined)
-        ? '数据不足'
-        : formatNumber(m.prediction);
+      if (m.prediction === null || m.prediction === undefined) {
+        const minLen = m.minLen;
+        if (minLen !== undefined && minLen !== null && state.series.length < minLen) {
+          val.textContent = '还差 ' + (minLen - state.series.length) + ' 个';
+        } else {
+          val.textContent = '预测失败';
+        }
+      } else {
+        val.textContent = formatNumber(m.prediction);
+      }
 
       // 权重百分比 / weight percentage
       const w = document.createElement('span');
@@ -692,6 +836,8 @@
     state.ensemblePredictions = [];
     state.nnPredictions = [];
     state.fitCurve = null;
+    state.overfitResult = null;
+    state.offsetResult = null;
 
     const ensembleEl = document.getElementById('ensemble-result');
     if (ensembleEl) ensembleEl.textContent = '— 等待输入 —';
@@ -701,6 +847,12 @@
 
     const funcFitPanel = document.getElementById('function-fit-panel');
     if (funcFitPanel) funcFitPanel.style.display = 'none';
+
+    const overfitPanel = document.getElementById('overfit-panel');
+    if (overfitPanel) overfitPanel.style.display = 'none';
+
+    const offsetPanel = document.getElementById('offset-panel');
+    if (offsetPanel) offsetPanel.style.display = 'none';
 
     const listEl = document.getElementById('method-list');
     if (listEl) {
@@ -792,6 +944,23 @@
         domain: state.fitCurve.domain,
         range: state.fitCurve.range,
         r2: state.fitCurve.rSquared
+      } : null,
+      overfitResult: state.overfitResult ? {
+        ensemble: state.overfitResult.ensemble,
+        methods: state.overfitResult.methods ? state.overfitResult.methods.map(function (m) {
+          return {
+            id: m.id,
+            name: m.name,
+            prediction: m.prediction,
+            mape: m.mape,
+            weight: m.weight
+          };
+        }) : []
+      } : null,
+      offsetResult: state.offsetResult ? {
+        best: state.offsetResult.best,
+        candidates: state.offsetResult.candidates,
+        isExactMatch: state.offsetResult.isExactMatch
       } : null,
       methods: state.stats.map(function (s, i) {
         return {
