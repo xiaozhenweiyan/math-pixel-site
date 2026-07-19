@@ -1038,11 +1038,14 @@
 
         <div class="settings-section">
           <label class="settings-label" data-i18n="label_language">语言</label>
-          <select id="settings-language" class="pixel-input">
-            <option value="auto" data-i18n="lang_auto">跟随系统</option>
-            <option value="zh" data-i18n="lang_zh">中文</option>
-            <option value="en" data-i18n="lang_en">英文</option>
-          </select>
+          <div class="settings-language-row">
+            <select id="settings-language" class="pixel-input">
+              <option value="auto" data-i18n="lang_auto">跟随系统</option>
+              <option value="zh" data-i18n="lang_zh">中文</option>
+              <option value="en" data-i18n="lang_en">英文</option>
+            </select>
+            <button id="btn-reload-lang" class="pixel-btn" data-i18n="btn_reload" title="切换失败时点击刷新页面">刷新</button>
+          </div>
         </div>
 
         <div class="settings-section" id="settings-section-wasm">
@@ -1075,10 +1078,6 @@
   </button>
 
   <button class="floating-avatar" id="floating-avatar" title="访客" aria-label="个人设置"></button>
-
-  <button class="floating-lang-btn" id="floating-lang-btn" title="语言 / Language" aria-label="语言切换">
-    <span class="floating-lang-text" id="floating-lang-text">中</span>
-  </button>
 
   <div id="toast" class="pixel-panel pixel-toast" style="display:none;"></div>
 

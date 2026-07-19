@@ -618,6 +618,14 @@
       });
     }
 
+    // 语言切换刷新按钮（切换失败时点击刷新页面）
+    const reloadLangBtn = document.getElementById('btn-reload-lang');
+    if (reloadLangBtn) {
+      reloadLangBtn.addEventListener('click', function () {
+        window.location.reload();
+      });
+    }
+
     // Wasm 加速开关
     if (window.PixelArt && window.PixelArt.initWasmToggle) {
       window.PixelArt.initWasmToggle();
@@ -645,36 +653,6 @@
     } else {
       document.body.style.background = '';
     }
-  }
-
-  // ============================================================
-  // 浮动语言切换按钮 / Floating Language Toggle Button
-  // ============================================================
-  function updateFloatingLangBtn() {
-    const btn = document.getElementById('floating-lang-btn');
-    const text = document.getElementById('floating-lang-text');
-    if (!btn || !text || !window.i18n) return;
-    const lang = i18n.getCurrentLang();
-    text.textContent = lang === 'zh' ? 'EN' : '中';
-    btn.title = lang === 'zh' ? 'Switch to English' : '切换到中文';
-    btn.setAttribute('aria-label', btn.title);
-  }
-
-  function initFloatingLangBtn() {
-    const btn = document.getElementById('floating-lang-btn');
-    if (!btn || !window.i18n) return;
-
-    updateFloatingLangBtn();
-
-    btn.addEventListener('click', function () {
-      const current = i18n.getCurrentLang();
-      const next = current === 'zh' ? 'en' : 'zh';
-      i18n.setLanguage(next);
-    });
-
-    document.addEventListener('languagechange', function () {
-      updateFloatingLangBtn();
-    });
   }
 
   // ============================================================
@@ -3067,9 +3045,6 @@
     if (window.i18n && typeof window.i18n.init === 'function') {
       window.i18n.init();
     }
-
-    // 浮动语言切换按钮 / floating language toggle
-    initFloatingLangBtn();
 
     // 按钮事件 / button listeners
     const btnPredict = document.getElementById('btn-predict');

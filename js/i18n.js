@@ -285,6 +285,7 @@
       lang_auto: '跟随系统',
       lang_zh: '中文',
       lang_en: '英文',
+      btn_reload: '刷新',
 
       label_wasm_acceleration: 'WebAssembly 加速',
       wasm_desc: '反应扩散模式硬件加速（实验性功能）',
@@ -630,6 +631,7 @@
       lang_auto: 'System Default',
       lang_zh: '中文',
       lang_en: 'English',
+      btn_reload: 'Reload',
 
       label_wasm_acceleration: 'WebAssembly Acceleration',
       wasm_desc: 'Reaction-Diffusion mode hardware acceleration (experimental)',

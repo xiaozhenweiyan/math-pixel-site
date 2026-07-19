@@ -765,7 +765,8 @@ footer.pixel-panel p {
   align-items: center;
   justify-content: center;
   transition: opacity 0.6s ease, visibility 0.6s ease;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .landing-page.hidden {
@@ -1000,7 +1001,8 @@ footer.pixel-panel p {
   align-items: center;
   justify-content: center;
   transition: opacity 0.6s ease, visibility 0.6s ease;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .learning-landing-page.hidden {
@@ -1395,42 +1397,6 @@ footer.pixel-panel p {
   box-shadow: 0 0 0 #000000;
 }
 
-/* ---------- 浮动语言切换按钮 / Floating Language Button ---------- */
-.floating-lang-btn {
-  position: fixed;
-  top: 12px;
-  right: 16px;
-  z-index: 9999;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  background: #1a1a2e;
-  border: 3px solid #ffd700;
-  border-radius: 4px;
-  cursor: pointer;
-  box-shadow: 4px 4px 0 #000000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.1s, box-shadow 0.1s;
-}
-.floating-lang-btn:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0 #000000;
-}
-.floating-lang-btn:active {
-  transform: translate(2px, 2px);
-  box-shadow: 0 0 0 #000000;
-}
-.floating-lang-text {
-  color: #ffd700;
-  font-family: "Courier New", Courier, monospace;
-  font-weight: bold;
-  font-size: 14px;
-  letter-spacing: 0;
-  line-height: 1;
-}
-
 /* ============================================================
    注册弹窗 / Register Modal
    ============================================================ */
@@ -1503,6 +1469,19 @@ footer.pixel-panel p {
   font-family: 'Courier New', monospace;
   font-size: 14px;
   font-weight: bold;
+}
+.settings-language-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+.settings-language-row .pixel-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.settings-language-row .pixel-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 .settings-avatar-row {
   display: flex;
@@ -1608,7 +1587,8 @@ footer.pixel-panel p {
   min-height: 100vh;
   background: #1a1a2e;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 .app-landing-page.active {
   display: block;
