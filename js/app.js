@@ -199,11 +199,13 @@
     const landing = document.getElementById('landing-page');
     const predictor = document.getElementById('predictor-page');
     const calc = document.getElementById('calculator-page');
+    const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
     if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.remove('active');
     if (calc) calc.classList.remove('active');
+    if (pixelArt) pixelArt.classList.remove('active');
     if (settings) settings.classList.add('active');
     // 把当前 profile 状态填入设置页表单
     const nicknameInput = document.getElementById('settings-nickname');
@@ -249,16 +251,99 @@
   }
 
   /**
+   * sanitizeSvgDataUrl(dataUrl) → string | null
+   * 安全最佳实践（defense-in-depth）：SVG 可携带 <script>、on* 事件处理器、
+   * <foreignObject>、外部资源引用等，虽作为 CSS background-image 时不执行脚本，
+   * 但为防止未来渲染方式变更（如改为 innerHTML / <embed> / <object>）导致 XSS，
+   * 此处对 SVG data URL 进行消毒：
+   *   1. 用 DOMParser 解析 SVG
+   *   2. 移除 script / foreignObject / embed / object / iframe / link[stylesheet] 等危险元素
+   *   3. 移除所有 on* 事件属性
+   *   4. 移除指向 http(s) 的 href / xlink:href（防外链追踪与 SSRF）
+   *   5. 重新序列化为 data URL 返回；解析失败或为空返回 null
+   */
+  function sanitizeSvgDataUrl(dataUrl) {
+    if (typeof dataUrl !== 'string') return null;
+    // 仅处理 SVG data URL
+    const m = dataUrl.match(/^data:image\/svg\+xml;base64,([A-Za-z0-9+/=]*)$/);
+    if (!m) return null;
+    let svgText;
+    try {
+      svgText = atob(m[1]);
+    } catch (e) {
+      return null;
+    }
+    if (!svgText || svgText.length > 1024 * 1024) return null;  // 防超大 SVG
+    let doc;
+    try {
+      doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
+    } catch (e) {
+      return null;
+    }
+    if (!doc || !doc.documentElement) return null;
+    const root = doc.documentElement;
+    // 解析出错时 DOMParser 会返回 <parsererror>，直接拒绝
+    if (root.tagName && root.tagName.toLowerCase() === 'parsererror') return null;
+    // 移除危险元素 / remove dangerous elements
+    const dangerousSelectors = 'script, foreignObject, embed, object, iframe, link[rel="stylesheet"], meta, base';
+    const dangerous = root.querySelectorAll(dangerousSelectors);
+    for (let i = dangerous.length - 1; i >= 0; i--) {
+      const el = dangerous[i];
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }
+    // 移除事件属性与外链引用 / strip event handlers and external refs
+    const all = root.querySelectorAll('*');
+    for (let i = 0; i < all.length; i++) {
+      const el = all[i];
+      const attrs = el.attributes;
+      for (let j = attrs.length - 1; j >= 0; j--) {
+        const attr = attrs[j];
+        const name = attr.name.toLowerCase();
+        const val = attr.value || '';
+        if (name.startsWith('on')) {
+          el.removeAttribute(attr.name);
+        } else if ((name === 'href' || name === 'xlink:href') &&
+                   (/^https?:/i.test(val) || /^\/\//.test(val) || val.toLowerCase().indexOf('javascript:') === 0)) {
+          el.removeAttribute(attr.name);
+        }
+      }
+    }
+    // 重新序列化 / re-serialize
+    let cleanSvg;
+    try {
+      cleanSvg = new XMLSerializer().serializeToString(root);
+    } catch (e) {
+      return null;
+    }
+    if (!cleanSvg) return null;
+    // 重新编码为 base64 data URL（使用 encodeURIComponent + btoa 处理 Unicode）
+    let b64;
+    try {
+      b64 = btoa(unescape(encodeURIComponent(cleanSvg)));
+    } catch (e) {
+      return null;
+    }
+    return 'data:image/svg+xml;base64,' + b64;
+  }
+
+  /**
    * compressImage(file, maxDim, isAvatar) → Promise<string>
    * 图片压缩：
    *   - 文件 ≤ 500KB：直接 FileReader.readAsDataURL
    *   - 文件 > 500KB：用 Image + canvas 压缩
    *     - 头像（isAvatar=true）：256×256 居中裁剪，JPEG 0.85
    *     - 背景（isAvatar=false）：最长边 ≤ maxDim 保持比例，JPEG 0.8
+   * 安全：解码前校验图像像素尺寸，防"解压炸弹"（小文件大像素）导致浏览器卡死
    */
   function compressImage(file, maxDim, isAvatar) {
     return new Promise(function (resolve, reject) {
       if (!file) { reject(new Error('无文件')); return; }
+
+      // 安全：硬性上限，防大文件解析导致内存爆炸
+      if (file.size > 10 * 1024 * 1024) {
+        reject(new Error('文件过大（>10MB），请压缩后上传'));
+        return;
+      }
 
       // 小文件直接用
       if (file.size <= 500 * 1024) {
@@ -275,6 +360,23 @@
         const img = new Image();
         img.onload = function () {
           try {
+            // 安全：检查图像像素尺寸，防"解压炸弹" / prevent decompression bomb DoS
+            const MAX_PIXELS_PER_SIDE = 8192;
+            const MAX_TOTAL_PIXELS = 4096 * 4096;
+            if (!Number.isFinite(img.width) || !Number.isFinite(img.height) ||
+                img.width <= 0 || img.height <= 0) {
+              reject(new Error('图片尺寸无效'));
+              return;
+            }
+            if (img.width > MAX_PIXELS_PER_SIDE || img.height > MAX_PIXELS_PER_SIDE) {
+              reject(new Error('图片像素尺寸过大（单边 > ' + MAX_PIXELS_PER_SIDE + 'px）'));
+              return;
+            }
+            if (img.width * img.height > MAX_TOTAL_PIXELS) {
+              reject(new Error('图片总像素过大（> ' + MAX_TOTAL_PIXELS + ' 像素）'));
+              return;
+            }
+
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
@@ -351,17 +453,39 @@
           return;
         }
 
-        // SVG 不压缩（直接读取）
+        // SVG 不压缩（直接读取），但需校验大小并消毒 / sanitize SVG, no compression
         if (file.type === 'image/svg+xml' || ext === 'svg') {
+          // 安全：限制 SVG 文件大小，防 sessionStorage 配额耗尽与解析 DoS
+          if (file.size > 200 * 1024) {
+            showToast('SVG 文件过大（>200KB），请精简后上传');
+            this.value = '';
+            return;
+          }
           const reader = new FileReader();
           reader.onload = function (e) {
-            profile.avatar = e.target.result;
+            // 安全：SVG 可能携带 <script>/on* 等，消毒后再存储
+            const cleaned = sanitizeSvgDataUrl(e.target.result);
+            if (!cleaned) {
+              showToast('SVG 文件含不安全内容或格式错误，已拒绝');
+              return;
+            }
+            profile.avatar = cleaned;
             saveProfile();
             updateAppUserBar();
             updateSettingsAvatarPreview();
             showToast('头像已更新');
           };
+          reader.onerror = function () {
+            showToast('SVG 文件读取失败');
+          };
           reader.readAsDataURL(file);
+          this.value = '';
+          return;
+        }
+
+        // 安全：限制上传文件大小（防 DoS）
+        if (file.size > 10 * 1024 * 1024) {
+          showToast('文件过大（>10MB），请压缩后上传');
           this.value = '';
           return;
         }
@@ -412,17 +536,39 @@
           return;
         }
 
-        // SVG 不压缩
+        // SVG 不压缩，但需校验大小并消毒 / sanitize SVG, no compression
         if (file.type === 'image/svg+xml' || ext === 'svg') {
+          // 安全：限制 SVG 文件大小，防 sessionStorage 配额耗尽与解析 DoS
+          if (file.size > 200 * 1024) {
+            showToast('SVG 文件过大（>200KB），请精简后上传');
+            this.value = '';
+            return;
+          }
           const reader = new FileReader();
           reader.onload = function (e) {
+            // 安全：SVG 可能携带 <script>/on* 等，消毒后再存储
+            const cleaned = sanitizeSvgDataUrl(e.target.result);
+            if (!cleaned) {
+              showToast('SVG 文件含不安全内容或格式错误，已拒绝');
+              return;
+            }
             profile.bgType = 'image';
-            profile.bgValue = e.target.result;
+            profile.bgValue = cleaned;
             saveProfile();
             applyBackground();
             showToast('背景图片已应用');
           };
+          reader.onerror = function () {
+            showToast('SVG 文件读取失败');
+          };
           reader.readAsDataURL(file);
+          this.value = '';
+          return;
+        }
+
+        // 安全：限制上传文件大小（防 DoS）
+        if (file.size > 10 * 1024 * 1024) {
+          showToast('文件过大（>10MB），请压缩后上传');
           this.value = '';
           return;
         }
@@ -2126,11 +2272,13 @@
     const landing = document.getElementById('landing-page');
     const predictor = document.getElementById('predictor-page');
     const calc = document.getElementById('calculator-page');
+    const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
     if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.remove('hidden');
     if (predictor) predictor.classList.remove('active');
     if (calc) calc.classList.remove('active');
+    if (pixelArt) pixelArt.classList.remove('active');
     if (settings) settings.classList.remove('active');
   }
 
@@ -2139,11 +2287,13 @@
     const landing = document.getElementById('landing-page');
     const predictor = document.getElementById('predictor-page');
     const calc = document.getElementById('calculator-page');
+    const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
     if (appLanding) appLanding.classList.add('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.remove('active');
     if (calc) calc.classList.remove('active');
+    if (pixelArt) pixelArt.classList.remove('active');
     if (settings) settings.classList.remove('active');
   }
 
@@ -2152,11 +2302,13 @@
     const landing = document.getElementById('landing-page');
     const predictor = document.getElementById('predictor-page');
     const calc = document.getElementById('calculator-page');
+    const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
     if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.add('active');
     if (calc) calc.classList.remove('active');
+    if (pixelArt) pixelArt.classList.remove('active');
     if (settings) settings.classList.remove('active');
     // 触发画布重绘
     setTimeout(function () {
@@ -2170,12 +2322,35 @@
     const landing = document.getElementById('landing-page');
     const predictor = document.getElementById('predictor-page');
     const calc = document.getElementById('calculator-page');
+    const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
     if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.remove('active');
     if (calc) calc.classList.add('active');
+    if (pixelArt) pixelArt.classList.remove('active');
     if (settings) settings.classList.remove('active');
+  }
+
+  function showPixelArt() {
+    const appLanding = document.getElementById('app-landing-page');
+    const landing = document.getElementById('landing-page');
+    const predictor = document.getElementById('predictor-page');
+    const calc = document.getElementById('calculator-page');
+    const pixelArt = document.getElementById('pixel-art-page');
+    const settings = document.getElementById('settings-page');
+    if (appLanding) appLanding.classList.remove('active');
+    if (landing) landing.classList.add('hidden');
+    if (predictor) predictor.classList.remove('active');
+    if (calc) calc.classList.remove('active');
+    if (pixelArt) pixelArt.classList.add('active');
+    if (settings) settings.classList.remove('active');
+    // 进入页面后重新生成一次，确保画布初始化正确
+    setTimeout(function () {
+      if (window.PixelArt && typeof window.PixelArt.regenerate === 'function') {
+        window.PixelArt.regenerate();
+      }
+    }, 50);
   }
 
   function initPageSwitching() {
@@ -2187,6 +2362,8 @@
     const btnFloatingSettings = document.getElementById('btn-floating-settings');
     const btnEnterMath = document.getElementById('btn-enter-math');
     const btnBackToTools = document.getElementById('btn-back-to-tools');
+    const btnEnterPixelArt = document.getElementById('btn-enter-pixel-art');
+    const btnBackHomeArt = document.getElementById('btn-back-home-art');
     if (btnPredictor) btnPredictor.addEventListener('click', showPredictor);
     if (btnCalc) btnCalc.addEventListener('click', showCalculator);
     if (btnBackPredict) btnBackPredict.addEventListener('click', showLanding);
@@ -2195,6 +2372,8 @@
     if (btnBackSettings) btnBackSettings.addEventListener('click', showAppLanding);
     if (btnEnterMath) btnEnterMath.addEventListener('click', showLanding);
     if (btnBackToTools) btnBackToTools.addEventListener('click', showAppLanding);
+    if (btnEnterPixelArt) btnEnterPixelArt.addEventListener('click', showPixelArt);
+    if (btnBackHomeArt) btnBackHomeArt.addEventListener('click', showAppLanding);
   }
 
   // ============================================================

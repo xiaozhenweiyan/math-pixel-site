@@ -26,23 +26,49 @@
       <h1 class="app-landing-title">像素风格工具网站</h1>
       <p class="app-landing-subtitle">PIXEL TOOLS</p>
       <div class="app-landing-cards">
-        <button class="app-landing-card" id="btn-enter-math">
-          <div class="app-landing-card-icon">
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-              <rect x="6" y="6" width="36" height="36" stroke="#ffd700" stroke-width="3" fill="#1a1a2e"/>
-              <text x="24" y="32" text-anchor="middle" fill="#ffd700" font-family="Courier New" font-size="22" font-weight="bold">π</text>
-              <circle cx="14" cy="14" r="2" fill="#1e90ff"/>
-              <circle cx="34" cy="14" r="2" fill="#ff4500"/>
-              <circle cx="14" cy="34" r="2" fill="#228b22"/>
-              <circle cx="34" cy="34" r="2" fill="#ffd700"/>
-            </svg>
-          </div>
-          <div class="app-landing-card-body">
-            <div class="app-landing-card-title">像素数学</div>
-            <div class="app-landing-card-desc">数字序列预测 · 计算器 · 神经网络可视化</div>
-          </div>
-        </button>
-        <!-- 后续可在此添加更多工具卡片 -->
+        <div class="app-landing-category">
+          <div class="app-landing-category-title">学习类 LEARNING</div>
+          <button class="app-landing-card" id="btn-enter-math">
+            <div class="app-landing-card-icon">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <rect x="6" y="6" width="36" height="36" stroke="#ffd700" stroke-width="3" fill="#1a1a2e"/>
+                <text x="24" y="32" text-anchor="middle" fill="#ffd700" font-family="Courier New" font-size="22" font-weight="bold">π</text>
+                <circle cx="14" cy="14" r="2" fill="#1e90ff"/>
+                <circle cx="34" cy="14" r="2" fill="#ff4500"/>
+                <circle cx="14" cy="34" r="2" fill="#228b22"/>
+                <circle cx="34" cy="34" r="2" fill="#ffd700"/>
+              </svg>
+            </div>
+            <div class="app-landing-card-body">
+              <div class="app-landing-card-title">像素数学</div>
+              <div class="app-landing-card-desc">数字序列预测 · 计算器 · 神经网络可视化</div>
+            </div>
+          </button>
+        </div>
+        <div class="app-landing-category">
+          <div class="app-landing-category-title">艺术类 ART</div>
+          <button class="app-landing-card" id="btn-enter-pixel-art">
+            <div class="app-landing-card-icon">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <!-- 像素画笔/调色板图标 -->
+                <rect x="6" y="6" width="36" height="36" stroke="#ffd700" stroke-width="3" fill="#1a1a2e"/>
+                <rect x="10" y="10" width="6" height="6" fill="#ff4500"/>
+                <rect x="18" y="10" width="6" height="6" fill="#ffd700"/>
+                <rect x="26" y="10" width="6" height="6" fill="#1e90ff"/>
+                <rect x="10" y="18" width="6" height="6" fill="#228b22"/>
+                <rect x="18" y="18" width="6" height="6" fill="#ffffff"/>
+                <rect x="26" y="18" width="6" height="6" fill="#8b4513"/>
+                <rect x="10" y="26" width="6" height="6" fill="#1e90ff"/>
+                <rect x="18" y="26" width="6" height="6" fill="#ffd700"/>
+                <rect x="26" y="26" width="6" height="6" fill="#ff4500"/>
+              </svg>
+            </div>
+            <div class="app-landing-card-body">
+              <div class="app-landing-card-title">像素艺术生成器</div>
+              <div class="app-landing-card-desc">种子化随机生成像素艺术 · 流场 · 粒子 · 几何图案</div>
+            </div>
+          </button>
+        </div>
       </div>
     </div>
     <footer class="app-landing-footer">
@@ -281,6 +307,66 @@
     </main>
   </div>
 
+  <div id="pixel-art-page" class="pixel-art-page">
+    <button class="floating-back-btn" id="btn-back-home-art">← 返回首页</button>
+    <header class="pixel-panel" style="text-align:center; margin:20px;">
+      <h1 class="pixel-title">像素艺术生成器 PIXEL ART</h1>
+      <p class="pixel-subtitle">种子化随机生成 · 复古深空像素风</p>
+    </header>
+    <main class="pixel-art-layout">
+      <div class="pixel-panel pixel-art-canvas-panel">
+        <h2>画布</h2>
+        <div class="pixel-art-canvas-wrap">
+          <div id="pixel-art-canvas-container"></div>
+        </div>
+      </div>
+      <aside class="pixel-panel pixel-art-controls">
+        <h2>控制台</h2>
+
+        <div class="pixel-art-section">
+          <label class="settings-label">种子</label>
+          <div class="pixel-art-seed-row">
+            <button id="art-seed-prev" class="pixel-btn">◀</button>
+            <input type="number" id="art-seed" class="pixel-input" value="1" min="1" max="999999">
+            <button id="art-seed-next" class="pixel-btn">▶</button>
+          </div>
+          <button id="art-seed-random" class="pixel-btn">随机种子</button>
+        </div>
+
+        <div class="pixel-art-section">
+          <label class="settings-label">艺术模式</label>
+          <select id="art-mode" class="pixel-input">
+            <option value="flow">流场 Flow Field</option>
+            <option value="particles">粒子系统 Particles</option>
+            <option value="mosaic">几何马赛克 Mosaic</option>
+            <option value="spiral">螺旋 Spiral</option>
+          </select>
+        </div>
+
+        <div class="pixel-art-section">
+          <label class="settings-label">分辨率 <span id="art-resolution-value">32</span>px</label>
+          <input type="range" id="art-resolution" min="16" max="64" step="4" value="32" class="pixel-input">
+        </div>
+
+        <div class="pixel-art-section">
+          <label class="settings-label">密度 <span id="art-density-value">50</span></label>
+          <input type="range" id="art-density" min="10" max="100" step="5" value="50" class="pixel-input">
+        </div>
+
+        <div class="pixel-art-section">
+          <label class="settings-label">色相 <span id="art-hue-value">45</span>°</label>
+          <input type="range" id="art-hue" min="0" max="360" step="15" value="45" class="pixel-input">
+        </div>
+
+        <div class="pixel-art-section">
+          <button id="art-regenerate" class="pixel-btn">重新生成</button>
+          <button id="art-download" class="pixel-btn">下载 PNG</button>
+          <button id="art-animate" class="pixel-btn">动画播放</button>
+        </div>
+      </aside>
+    </main>
+  </div>
+
   <div id="settings-page" class="settings-page">
     <header class="pixel-panel" style="text-align:center; margin:20px;">
       <h1 class="pixel-title">个人设置 PIXEL SETTINGS</h1>
@@ -345,6 +431,8 @@
   <div id="toast" class="pixel-panel pixel-toast" style="display:none;"></div>
 
   <!-- Scripts loaded at end of body, in this exact order -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+  <script src="js/pixel-art.js"></script>
   <script src="js/predictors.js"></script>
   <script src="js/weights.js"></script>
   <script src="js/nn.js"></script>

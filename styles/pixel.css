@@ -1453,27 +1453,49 @@ footer.pixel-panel p {
   opacity: 0.7;
 }
 .app-landing-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
   margin: 0 auto;
   padding: 0 16px;
+}
+.app-landing-category {
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.app-landing-category:last-child {
+  margin-bottom: 0;
+}
+.app-landing-category-title {
+  color: #ffd700;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 18px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  border-bottom: 2px solid #ffd700;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
 }
 .app-landing-card {
   background: #1a1a2e;
   border: 3px solid #ffffff;
   border-radius: 4px;
-  padding: 24px;
+  padding: 20px;
   cursor: pointer;
   font-family: 'Courier New', monospace;
   color: #ffffff;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
+  width: 100%;
   transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
   box-shadow: 6px 6px 0 #000000;
+  text-align: left;
 }
 .app-landing-card:hover {
   transform: translate(-3px, -3px);
@@ -1485,8 +1507,9 @@ footer.pixel-panel p {
   box-shadow: 0 0 0 #000000;
 }
 .app-landing-card-icon {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1495,19 +1518,23 @@ footer.pixel-panel p {
   background: #0d0d1f;
 }
 .app-landing-card-body {
-  text-align: center;
+  flex: 1 1 auto;
+  text-align: left;
+  min-width: 0;
 }
 .app-landing-card-title {
   color: #ffd700;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: bold;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  letter-spacing: 1px;
 }
 .app-landing-card-desc {
   color: #ffffff;
   font-size: 13px;
   opacity: 0.8;
   line-height: 1.4;
+  letter-spacing: 0.5px;
 }
 
 /* 工具首页底部 footer / App landing footer */
@@ -1534,3 +1561,162 @@ footer.pixel-panel p {
 .app-landing-footer a:active {
   opacity: 0.6;
 }
+
+/* ============================================================
+   像素艺术生成器页面 / Pixel Art Generator Page
+   ============================================================ */
+.pixel-art-page {
+  display: none;
+}
+.pixel-art-page.active {
+  display: block;
+}
+.pixel-art-layout {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 20px;
+  padding: 0 20px 20px;
+  align-items: start;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.pixel-art-canvas-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pixel-art-canvas-wrap {
+  background: #1a1a2e;
+  border: 3px solid #ffffff;
+  border-radius: 4px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.4);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#pixel-art-canvas-container {
+  width: 100%;
+  max-width: 600px;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#pixel-art-canvas-container canvas {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  border: 3px solid #ffffff;
+  border-radius: 4px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.4);
+  background: #1a1a2e;
+}
+.pixel-art-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pixel-art-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.pixel-art-section:last-child {
+  margin-bottom: 0;
+}
+.pixel-art-section .pixel-btn {
+  width: 100%;
+  text-align: center;
+}
+.pixel-art-seed-row {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: stretch;
+}
+.pixel-art-seed-row input {
+  flex: 1 1 auto;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+.pixel-art-seed-row input::-webkit-outer-spin-button,
+.pixel-art-seed-row input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.pixel-art-seed-row .pixel-btn {
+  width: auto;
+  min-width: 40px;
+  padding: 8px 12px;
+}
+/* 滑块 / range slider — 像素风金色 accent */
+.pixel-art-section input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 18px;
+  background: #1a1a2e;
+  border: 3px solid #ffffff;
+  border-radius: 4px;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+  outline: none;
+  padding: 0;
+  cursor: pointer;
+}
+.pixel-art-section input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #ffd700;
+  border: 2px solid #ffffff;
+  border-radius: 2px;
+  cursor: pointer;
+  box-shadow: 0 0 0 0 #000000;
+}
+.pixel-art-section input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #ffd700;
+  border: 2px solid #ffffff;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.pixel-art-section input[type="range"]::-moz-range-track {
+  background: transparent;
+  border: none;
+}
+.pixel-art-section select.pixel-input {
+  cursor: pointer;
+  background: #1a1a2e;
+}
+.pixel-art-section select.pixel-input option {
+  background: #1a1a2e;
+  color: #ffffff;
+}
+.pixel-art-section .settings-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.pixel-art-section .settings-label span {
+  color: #ffffff;
+  font-weight: bold;
+}
+
+@media (max-width: 900px) {
+  .pixel-art-layout {
+    grid-template-columns: 1fr;
+    padding: 0 12px 12px;
+  }
+  #pixel-art-canvas-container {
+    max-width: 100%;
+  }
+}
+
