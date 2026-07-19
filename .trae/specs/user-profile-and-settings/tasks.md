@@ -37,9 +37,9 @@
   - [x] SubTask 4.11: app.js init 中调用 applyBackground() 和 updateTopbar() 恢复状态
   - [x] SubTask 4.12: app.js initPageSwitching 中添加"个人系统"卡片和设置页返回按钮的事件绑定
 
-- [ ] Task 5: 推送 GitHub
-  - [ ] SubTask 5.1: 提交并推送到 origin main + gh-pages
-  - [ ] SubTask 5.2: 验证 https://xiaozhenweiyan.github.io/math-pixel-site/ 可访问
+- [x] Task 5: 推送 GitHub
+  - [x] SubTask 5.1: 提交并推送到 origin main + gh-pages
+  - [x] SubTask 5.2: 验证 https://xiaozhenweiyan.github.io/math-pixel-site/ 可访问
 
 # Task Dependencies
 - [Task 2] 独立，可先做
