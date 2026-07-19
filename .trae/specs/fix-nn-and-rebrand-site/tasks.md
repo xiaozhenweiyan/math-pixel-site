@@ -16,11 +16,11 @@
   - [x] SubTask 2.5: pixel.css 添加卡片样式（hover 效果、像素风图标、网格布局）
   - [x] SubTask 2.6: app.js 中卡片点击逻辑（沿用原 initLandingPage，适配新 DOM）
 
-- [ ] Task 3: GitHub 仓库重命名 + 推送
-  - [ ] SubTask 3.1: 用 gh API（带 token）或直接用 git remote 把 `pixel-predictor` 重命名为 `math-pixel-site`
-  - [ ] SubTask 3.2: 更新本地 git remote origin URL 为新仓库地址
-  - [ ] SubTask 3.3: 推送到新仓库 main + gh-pages 分支
-  - [ ] SubTask 3.4: 验证 https://xiaozhenweiyan.github.io/math-pixel-site/ 可访问
+- [x] Task 3: GitHub 仓库重命名 + 推送
+  - [x] SubTask 3.1: 用 GitHub API 把 `pixel-predictor` 重命名为 `math-pixel-site`（成功）
+  - [x] SubTask 3.2: 更新本地 git remote origin URL 为新仓库地址
+  - [x] SubTask 3.3: 推送到新仓库 main (a16127d..67f6cd8) + gh-pages (27acbcb..67f6cd8)
+  - [x] SubTask 3.4: 验证 https://xiaozhenweiyan.github.io/math-pixel-site/ 可访问（标题、卡片、NN 修复均已上线）
 
 # Task Dependencies
 - [Task 2] 独立于 [Task 1]，可并行
