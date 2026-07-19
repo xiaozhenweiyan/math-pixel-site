@@ -3,16 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>像素预测器 PIXEL PREDICTOR</title>
+  <title>数学学习网站</title>
   <link rel="stylesheet" href="styles/pixel.css">
 </head>
 <body>
-  <!-- 数学像素网站落地页 / Landing Page -->
+  <!-- 数学学习网站落地页 / Landing Page -->
   <div id="landing-page" class="landing-page">
     <div class="landing-content">
-      <h1 class="landing-title">数学像素网站</h1>
-      <p class="landing-subtitle">MATH PIXEL SITE</p>
-      <button id="btn-enter-predictor" class="landing-btn pixel-btn">预测系统</button>
+      <h1 class="landing-title">数学学习网站</h1>
+      <p class="landing-subtitle">MATH LEARNING SITE</p>
+      <div class="landing-cards">
+        <button class="landing-card" id="btn-enter-predictor">
+          <div class="landing-card-icon">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <rect x="6" y="6" width="36" height="36" stroke="#ffd700" stroke-width="3" fill="#1a1a2e"/>
+              <polyline points="10,30 18,22 26,28 38,14" stroke="#ffd700" stroke-width="3" fill="none" stroke-linecap="square"/>
+              <circle cx="18" cy="22" r="2.5" fill="#1e90ff"/>
+              <circle cx="26" cy="28" r="2.5" fill="#ff4500"/>
+              <circle cx="38" cy="14" r="2.5" fill="#228b22"/>
+            </svg>
+          </div>
+          <div class="landing-card-body">
+            <div class="landing-card-title">预测系统</div>
+            <div class="landing-card-desc">输入数字序列，40 种数学方法 + 神经网络预测</div>
+          </div>
+        </button>
+        <!-- 后续可在此添加更多功能卡片，如学习系统 -->
+      </div>
     </div>
     <div class="landing-pixels"></div>
   </div>

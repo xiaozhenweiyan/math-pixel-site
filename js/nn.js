@@ -138,7 +138,7 @@ const neuralNet = (function () {
 
   function computeAdaptiveTolerance(series) {
     if (isIntegerSeries(series)) {
-      return 0.01;
+      return 0.1;
     }
     var precision = getDecimalPrecision(series);
     if (precision > 0) {
@@ -200,15 +200,23 @@ const neuralNet = (function () {
   // ============================================================
   function postProcessPrediction(value, series) {
     if (!isFiniteNumber(value)) return value;
-    // 整数序列吸附到最近整数
+    // 智能吸附：仅当预测值与最近整数差距 < 0.05 时才吸附
     if (isIntegerSeries(series)) {
-      return Math.round(value);
+      var rounded = Math.round(value);
+      if (Math.abs(value - rounded) < 0.05) {
+        return rounded;
+      }
+      return value;
     }
-    // 小数序列按精度四舍五入
+    // 小数序列：仅当差距 < 0.5×10^(-precision) 时才四舍五入
     var precision = getDecimalPrecision(series);
     if (precision > 0) {
       var multiplier = Math.pow(10, precision);
-      return Math.round(value * multiplier) / multiplier;
+      var roundedDec = Math.round(value * multiplier) / multiplier;
+      if (Math.abs(value - roundedDec) < 0.5 * Math.pow(10, -precision)) {
+        return roundedDec;
+      }
+      return value;
     }
     return value;
   }
@@ -292,6 +300,9 @@ const neuralNet = (function () {
     var normalized = norm.data.slice();
     var predictions = [];
 
+    // 检测差分趋势（等差检测）
+    var diffTrend = detectDiffTrend(series);
+
     for (var s = 0; s < steps; s++) {
       var input = [];
       var n = normalized.length;
@@ -312,8 +323,59 @@ const neuralNet = (function () {
       }
     }
 
+    // 多步预测差分修正：如果检测到稳定差分趋势，用趋势外推修正
+    if (diffTrend !== null && steps > 1) {
+      predictions = applyDiffTrendCorrection(predictions, series, diffTrend, steps);
+    }
+
     lastPrediction = predictions[0];
     return predictions;
+  }
+
+  // 检测差分趋势
+  function detectDiffTrend(series) {
+    if (series.length < 3) return null;
+    var diffs = [];
+    for (var i = 1; i < series.length; i++) {
+      diffs.push(series[i] - series[i - 1]);
+    }
+    // 检查差分是否稳定（等差）
+    var firstDiff = diffs[0];
+    var isStable = true;
+    for (var j = 1; j < diffs.length; j++) {
+      if (Math.abs(diffs[j] - firstDiff) > 1e-6) {
+        isStable = false;
+        break;
+      }
+    }
+    if (isStable) return { type: 'arithmetic', diff: firstDiff };
+    return null;
+  }
+
+  // 应用差分趋势修正
+  function applyDiffTrendCorrection(predictions, series, trend, steps) {
+    if (trend.type !== 'arithmetic') return predictions;
+    var lastVal = series[series.length - 1];
+    var corrected = [];
+    for (var i = 0; i < steps; i++) {
+      // 第一步用 NN 预测（信任 NN），后续步用趋势外推
+      if (i === 0) {
+        corrected.push(predictions[0]);
+        lastVal = predictions[0];
+      } else {
+        // 混合：70% 趋势外推 + 30% NN 预测
+        var trendVal = lastVal + trend.diff;
+        var nnVal = predictions[i];
+        var mixed = trendVal * 0.7 + nnVal * 0.3;
+        // 整数序列保持整数
+        if (isIntegerSeries(series)) {
+          mixed = Math.round(mixed);
+        }
+        corrected.push(mixed);
+        lastVal = mixed;
+      }
+    }
+    return corrected;
   }
 
   // ============================================================
@@ -496,6 +558,7 @@ const neuralNet = (function () {
       // 构建渐进训练任务 / build progressive training tasks
       // 每个任务：用 series[0..k-1] 的最后 inputSize 个值预测 series[k]
       var tasks = [];
+      // 原始任务：用完整序列的滑窗
       for (var k = inputSize; k < series.length; k++) {
         var input = [];
         for (var i = 0; i < inputSize; i++) {
@@ -507,8 +570,51 @@ const neuralNet = (function () {
           input: input,
           target: target,
           actualVal: actualVal,
-          stepIdx: k - inputSize + 1
+          stepIdx: k - inputSize + 1,
+          isAugmented: false
         });
+      }
+
+      // 数据增强：用更短的前缀（长度 ≥ 2）补零到 inputSize，生成更多样本
+      // 这让 NN 学到递增模式而非记忆特定值
+      for (var augStart = 2; augStart < series.length; augStart++) {
+        for (var augEnd = augStart + 1; augEnd <= series.length; augEnd++) {
+          // 跳过已经作为原始任务的样本
+          if (augStart === 0 && augEnd === series.length) continue;
+          var augInput = [];
+          var augWindow = normData.slice(Math.max(0, augEnd - inputSize - 1), augEnd - 1);
+          // 补零到 inputSize 长度
+          while (augWindow.length < inputSize) {
+            augWindow.unshift(0);
+          }
+          for (var ai = 0; ai < inputSize; ai++) {
+            augInput.push(augWindow[ai]);
+          }
+          var augTarget = [normData[augEnd - 1]];
+          var augActual = series[augEnd - 1];
+          tasks.push({
+            input: augInput,
+            target: augTarget,
+            actualVal: augActual,
+            stepIdx: tasks.length + 1,
+            isAugmented: true
+          });
+        }
+      }
+
+      // 限制增强样本数量，避免训练过长
+      var MAX_AUGMENTED = 20;
+      var originalCount = series.length - inputSize;
+      if (tasks.length > originalCount + MAX_AUGMENTED) {
+        // 保留所有原始任务 + 最多 MAX_AUGMENTED 个增强任务（均匀采样）
+        var originalTasks = tasks.slice(0, originalCount);
+        var augmentedTasks = tasks.slice(originalCount);
+        var step = Math.ceil(augmentedTasks.length / MAX_AUGMENTED);
+        var sampledAug = [];
+        for (var s = 0; s < augmentedTasks.length; s += step) {
+          sampledAug.push(augmentedTasks[s]);
+        }
+        tasks = originalTasks.concat(sampledAug);
       }
 
       var totalTasks = tasks.length;
@@ -549,7 +655,7 @@ const neuralNet = (function () {
 
         function frameWrapper() {
           // 每帧训练若干 epoch，用 rAF 调度避免阻塞 UI
-          var epochsPerFrame = 10;
+          var epochsPerFrame = 5;
           for (var e = 0; e < epochsPerFrame && epoch < maxEpochs; e++) {
             var batchLoss = trainSample(task.input, task.target, lr);
             if (batchLoss < bestLoss) {
@@ -592,7 +698,8 @@ const neuralNet = (function () {
           animFrame++;
 
           // 误差在容差内 → 通过，进入下一组 / within tolerance → pass
-          if (error <= tolerance) {
+          // 增强样本跳过 tolerance 阻塞，只参与训练不阻塞流程
+          if (error <= tolerance || task.isAugmented) {
             currentTask++;
             if (onProgress) {
               onProgress(currentTask, totalTasks,
