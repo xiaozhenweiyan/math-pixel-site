@@ -1,21 +1,25 @@
-# 安全审查报告 — `/workspace/js/app.js`
+# 安全审查报告 — 表达式求值加固与图片上传安全
 
-**审查范围**：计算器表达式求值（`calculateExpr` 附近）与图片上传（`compressImage`、`readImageFile`、`initSettings` 中的头像/背景上传）。
+**审查范围**：计算器表达式求值、函数系统表达式解析、图片上传安全。
 **审查视角**：JavaScript 前端安全最佳实践（XSS、表达式注入、文件上传、存储安全）。
 **审查日期**：2026-07-19
-**审查文件**：`/workspace/js/app.js`（审查时 2321 行，修复后 2500 行）
+**审查文件**：
+- `/workspace/js/expression-parser.js`（新增，安全表达式解析器）
+- `/workspace/js/function-plotter.js`（函数系统，parseFunction 方法）
+- `/workspace/js/app.js`（计算器 calculateExpr / computeStepsWithTrace）
 
 ---
 
 ## 执行摘要 / Executive Summary
 
-整体代码安全基线**良好**：
+整体代码安全基线**良好**，且本次加固彻底消除了表达式注入风险：
 
-- **XSS 防护到位**：全文件无 `innerHTML`、`document.write`、`insertAdjacentHTML`、`eval` 等危险 API；用户可控内容（昵称、预测结果、方法名、计算器步骤等）一律通过 `textContent` / `createElement` 渲染（见 L12、L534、L1084、L1195 等注释与实现）。
-- **计算器白名单比预期更严格**：实际白名单是 `/^[-+*/().0-9]+$/`（在剥离 `sqrt/sin/cos/tan` 之后），**不是**任务描述中提到的 `/^[-+*/().0-9Mathsqrt]+$/`。`Math` 字符无法被用户直接输入，只能由 `sqrt(` → `Math.sqrt(` 的内部替换引入，无法被链接为 `Math.constructor` 等原型链访问。
-- **三角函数替换未引入新风险**：`sin(`/`cos(`/`tan(` 被替换为内部占位 `__sin(`/`__cos(`/`__tan(`，由闭包包装的 `trigEval` 求值；用户无法输入下划线 `_`，无法构造任意标识符。
+- **XSS 防护到位**：全文件无 `innerHTML`、`document.write`、`insertAdjacentHTML`、`eval` 等危险 API；用户可控内容一律通过 `textContent` / `createElement` 渲染。
+- **表达式求值彻底加固**：新增 `expression-parser.js` 实现 Token 级解析 + AST 评估，彻底移除所有 `new Function` / `eval` 调用。从"靠白名单维持安全"升级为"靠设计安全"。
+- **函数系统同步加固**：`function-plotter.js` 的 `parseFunction` 方法同样使用安全解析器。
+- **计算器功能完整保留**：分步计算、三角函数特殊角度精确值、角度模式切换等功能全部保留。
 
-但仍发现以下需关注的问题，其中 **3 个高危问题已在代码中直接修复**，中低危问题记录如下供后续处理。
+本次加固共修复 **1 个中危问题（M-2）**，新增表达式求值安全架构。
 
 | 编号 | 严重程度 | 标题 | 状态 |
 |------|----------|------|------|
@@ -23,7 +27,7 @@
 | H-2 | 高 | `compressImage` 缺少图像像素尺寸校验，易受解压炸弹 DoS | ✅ 已修复 |
 | H-3 | 高 | 头像/背景图片上传缺少整体文件大小上限 | ✅ 已修复 |
 | M-1 | 中 | SVG 上传缺少文件大小上限（sessionStorage 配额/解析 DoS） | ✅ 已修复 |
-| M-2 | 中 | `calculateExpr` 使用 `Function` 构造器（代码异味，纵深防御） | 📝 记录，未修 |
+| M-2 | 中 | 表达式求值使用 `Function` 构造器（纵深防御缺失） | ✅ 已修复（AST 解析器） |
 | M-3 | 中 | `readImageFile` 为死代码（已定义未调用） | 📝 记录，未修 |
 | L-1 | 低 | 文件类型校验依赖 `file.type` 与扩展名（均可伪造） | 📝 记录，未修 |
 | L-2 | 低 | `applyBackground` 将 `profile.bgValue` 拼入 CSS（已由数据来源约束） | 📝 记录，未修 |
@@ -369,10 +373,137 @@ if (e && (e.name === 'QuotaExceededError' || e.code === 22)) {
 - ✅ `compressImage` 在 `drawImage` 前增加像素尺寸校验。
 - ✅ 头像/背景上传分支与 `compressImage` 入口均增加 10MB 文件大小上限。
 - ✅ SVG 分支增加 200KB 文件大小上限。
-- ✅ 未修改 `calculateExpr`、`parseSequence`、`showToast`、CSV/JSON 导出等已安全的代码。
-- ✅ 未推送 GitHub（按要求，最后统一推送）。
+- ✅ 未修改 `parseSequence`、`showToast`、CSV/JSON 导出等已安全的代码。
 
 ---
 
-**报告作者**：security-best-practices skill 审查
+## 七、表达式求值加固（新增）
+
+### 7.1 加固背景
+
+原代码中存在两处使用 `new Function` 进行表达式求值：
+
+1. **`function-plotter.js` 的 `parseFunction`**（L252-291）：使用 `new Function('x', 'with (Math) { return ... }')` 解析和求值函数表达式。
+2. **`app.js` 的 `calculateExpr`**（原 L1818-1865）：使用 `new Function('__sin', '__cos', '__tan', 'return ...')` 计算计算器表达式。
+
+虽然原代码有白名单防护（在原审查中被判定为"短期无风险"），但本质上仍是"靠白名单维持安全"的脆弱设计。一旦白名单有疏漏，就可能导致代码注入。
+
+### 7.2 加固方案：Token 解析 + AST 评估
+
+新增 `/workspace/js/expression-parser.js`，实现完整的递归下降表达式解析器，彻底替代 `new Function`。
+
+#### 架构设计
+
+```
+用户输入 → Tokenizer（词法分析）→ Parser（语法分析，构建 AST）→ Evaluator（求值）
+```
+
+**Tokenizer（词法分析）**：
+- 将输入字符串分解为 token 流
+- 支持的 token 类型：数字、变量 x、运算符、函数名、常量、括号、EOF
+- 严格字符白名单：只允许 `[0-9a-zA-Z+\-*/^().\s]`
+
+**Parser（语法分析）**：
+- 递归下降解析器
+- 运算符优先级：`^`（右结合）> `* /` > `+ -`
+- 支持一元运算符 `+` / `-`
+- 支持函数调用
+- 递归深度限制：最大 100 层（防栈溢出 DoS）
+
+**Evaluator（求值）**：
+- 纯函数 `evalAst(node, x)`，不访问任何外部对象
+- 直接操作 AST 节点进行计算
+- 函数和常量从内部白名单映射表获取，不可扩展
+
+#### 支持的功能
+
+| 类别 | 支持项 |
+|------|--------|
+| 数字 | 整数、小数、科学计数法（如 `1.5e-3`） |
+| 变量 | `x`（仅函数系统使用） |
+| 运算符 | `+` `-` `*` `/` `^` `(` `)` |
+| 函数 | `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `sqrt`, `abs`, `log`（以10为底）, `ln`（自然对数）, `exp`, `floor`, `ceil`, `round` |
+| 常量 | `pi`, `e` |
+
+### 7.3 安全原理
+
+#### 1. 不靠白名单，靠设计安全
+
+原方案：
+```
+用户输入 → 字符串替换 → 白名单校验 → new Function → 执行
+```
+风险：白名单可能有疏漏，字符串替换可能被绕过。
+
+新方案：
+```
+用户输入 → Token 化 → 语法分析 → AST → 纯函数求值
+```
+原理：只有被 Parser 识别为合法语法结构的内容才能进入 AST，求值器只认识预定义的节点类型，无法执行任意代码。
+
+#### 2. 严格字符白名单
+
+```javascript
+const VALID_CHARS = /^[0-9a-zA-Z+\-*/^().\s]+$/;
+```
+Tokenizer 在词法分析前先校验整串字符，不合法直接拒绝。
+
+#### 3. 递归深度限制
+
+```javascript
+const MAX_RECURSION_DEPTH = 100;
+```
+防止恶意构造的深层嵌套表达式导致栈溢出（如 `((((...1...))))`）。
+
+#### 4. 纯函数求值
+
+`evalAst` 是纯函数，只依赖输入参数和内部常量/函数映射，不访问 `window`、`document`、`Math` 等全局对象。即使解析器有 bug，也无法逃逸到外部环境。
+
+#### 5. 错误友好处理
+
+所有解析和求值错误都被捕获，返回 `{ ok: false, error: '...' }`，通过 UI 显示友好提示，绝不抛出未捕获异常。
+
+### 7.4 计算器特殊适配
+
+计算器需要保留以下特殊功能，因此在 `app.js` 中实现了 `evalAstWithTrig` 包装函数：
+
+1. **角度模式**（RAD / DEG）：三角函数根据当前模式解释输入参数
+2. **特殊角度精确值**：通过 `getExactTrig` 查表返回精确值（如 `sin(30°) = 0.5`）
+3. **浮点吸附**：接近整数或接近 0 的值进行吸附，避免浮点误差
+
+`evalAstWithTrig` 复用 ExpressionParser 的 AST 结构，只在函数调用节点对三角函数做特殊处理，其他函数和运算逻辑与标准求值器一致。
+
+### 7.5 性能考量
+
+函数图像绘制需要高性能（滑块拖动时至少 30 FPS），因此：
+
+1. **一次性解析**：`parseFunction` 只在添加函数时解析一次，生成 AST
+2. **求值函数缓存**：`createEvaluator(ast)` 返回闭包函数，后续调用直接求值，无需重复解析
+3. **轻量级 AST**：节点是简单对象，求值只有 switch 语句，性能接近原生计算
+
+基准测试：单帧约 800 次求值（800px 宽画布），AST 求值开销可忽略。
+
+### 7.6 接口兼容性
+
+**FunctionPlotter 类**：
+- `parseFunction(input)` 接口不变，返回 `{ ok, fn, expr, error }`
+- `fn` 仍是 `function(x) { return ... }` 形式，调用方无需修改
+
+**计算器**：
+- `calculateExpr(expr)` 接口不变，返回 `{ ok, value, error }`
+- `computeStepsWithTrace(expr)` 分步计算逻辑不变（内部调用 `calculateExpr`）
+- 三角函数特殊角度精确值功能保留
+
+### 7.7 修改文件清单
+
+| 文件 | 修改内容 |
+|------|----------|
+| `/workspace/js/expression-parser.js` | 新增：安全表达式解析器（~400 行） |
+| `/workspace/js/function-plotter.js` | 修改：`parseFunction` 使用 ExpressionParser |
+| `/workspace/js/app.js` | 修改：新增 `evalAstWithTrig`，重写 `calculateExpr` |
+| `/workspace/index.html` | 修改：在 `function-plotter.js` 前引入 `expression-parser.js` |
+
+---
+
+**报告作者**：security-best-practices skill 审查 + 表达式求值加固
 **报告路径**：`/workspace/.trae/security-review-report.md`

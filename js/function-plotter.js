@@ -34,12 +34,18 @@
       this.originX = 0;  // 原点像素坐标（相对 canvas 左上）
       this.originY = 0;
       this.scale = 40;   // 单位长度像素数
-      this.functions = [];  // [{ expr, fn, color, input }]
+      this.functions = [];  // [{ expr, fn, color, input, ast }]
+      this.params = {};  // 参数值 { a: 1, b: 2, ... }
       this.dragging = false;
       this.lastMouseX = 0;
       this.lastMouseY = 0;
       this.colorIndex = 0;
       this._originInitialized = false;
+      this.touchPinching = false;
+      this.lastTouchDist = 0;
+      this.lastTouchCenterX = 0;
+      this.lastTouchCenterY = 0;
+      this._touchRafPending = false;
 
       this.resize();
       this.bindEvents();
@@ -205,11 +211,12 @@
       ctx.beginPath();
       let started = false;
       let lastY = null;
+      const params = this.params;
       for (let px = 0; px <= w; px += 1) {
         const mathX = this.toMathX(px);
         let mathY;
         try {
-          mathY = fn(mathX);
+          mathY = fn(mathX, params);
         } catch (e) {
           started = false;
           continue;
@@ -251,43 +258,26 @@
     // 支持 y=表达式 或 f(x)=表达式
     parseFunction(input) {
       let expr = (input || '').trim();
-      if (!expr) return { ok: false, error: '空输入' };
+      if (!expr) return { ok: false, error: i18n.t('func_empty_input') };
       // 去除 y= 或 f(x)= 前缀
       expr = expr.replace(/^y\s*=\s*/i, '');
       expr = expr.replace(/^f\s*\(\s*x\s*\)\s*=\s*/i, '');
-      if (!expr) return { ok: false, error: '表达式为空' };
-      // 预处理：^ → **，sin/cos/tan/log/sqrt/abs/exp → Math.xxx
-      let safe = expr;
-      // 先把 Math.xxx 临时替换保护
-      safe = safe.replace(/Math\./g, '__MATHDOT__');
-      // ^ → **
-      safe = safe.replace(/\^/g, '**');
-      // 函数名替换
-      const funcs = ['sin', 'cos', 'tan', 'log', 'sqrt', 'abs', 'exp', 'asin', 'acos', 'atan'];
-      for (let i = 0; i < funcs.length; i++) {
-        const re = new RegExp('\\b' + funcs[i] + '\\b', 'g');
-        safe = safe.replace(re, 'Math.' + funcs[i]);
+      if (!expr) return { ok: false, error: i18n.t('func_empty_expr') };
+      // 使用安全的表达式解析器
+      const parseResult = window.ExpressionParser.parse(expr);
+      if (!parseResult.ok) {
+        return { ok: false, error: i18n.t('func_parse_error', { msg: parseResult.error }) };
       }
-      // 常量
-      safe = safe.replace(/\bPI\b/g, 'Math.PI');
-      safe = safe.replace(/\bE\b/g, 'Math.E');
-      // 恢复 Math.
-      safe = safe.replace(/__MATHDOT__/g, 'Math.');
-      // 字符白名单校验（移除函数名后）
-      const checkStr = safe.replace(/Math\.(sin|cos|tan|log|sqrt|abs|exp|asin|acos|atan|PI|E)/g, '').replace(/\*\*/g, '');
-      if (!/^[-+*/().0-9x\s]*$/.test(checkStr)) {
-        return { ok: false, error: '包含非法字符' };
-      }
-      // 构造函数
+      // 测试求值（传入当前参数）
       try {
-        const fn = new Function('x', 'with (Math) { return ' + safe + '; }');
-        // 测试求值
-        const testVal = fn(1);
-        if (typeof testVal !== 'number') return { ok: false, error: '结果不是数字' };
-        return { ok: true, fn: fn, expr: safe };
+        const testVal = window.ExpressionParser.evalAst(parseResult.ast, 1, this.params);
+        if (typeof testVal !== 'number') return { ok: false, error: i18n.t('func_not_number') };
       } catch (e) {
-        return { ok: false, error: '表达式错误：' + e.message };
+        return { ok: false, error: i18n.t('func_parse_error', { msg: e.message }) };
       }
+      // 创建求值函数
+      const fn = window.ExpressionParser.createEvaluator(parseResult.ast);
+      return { ok: true, fn: fn, expr: expr, ast: parseResult.ast };
     }
 
     addFunction(input) {
@@ -299,10 +289,11 @@
         input: input.trim(),
         expr: result.expr,
         fn: result.fn,
-        color: color
+        color: color,
+        ast: result.ast
       });
       this.redraw();
-      return { ok: true, color: color, expr: result.expr };
+      return { ok: true, color: color, expr: result.expr, ast: result.ast };
     }
 
     removeFunction(index) {
@@ -316,6 +307,25 @@
       this.functions = [];
       this.colorIndex = 0;
       this.redraw();
+    }
+
+    setParams(params) {
+      this.params = params || {};
+      this.redraw();
+    }
+
+    getAllParams() {
+      const paramSet = {};
+      for (let i = 0; i < this.functions.length; i++) {
+        const ast = this.functions[i].ast;
+        if (ast && window.ExpressionParser && window.ExpressionParser.extractParams) {
+          const params = window.ExpressionParser.extractParams(ast);
+          for (let j = 0; j < params.length; j++) {
+            paramSet[params[j]] = true;
+          }
+        }
+      }
+      return Object.keys(paramSet).sort();
     }
 
     bindEvents() {
@@ -345,16 +355,106 @@
         const rect = self.canvas.getBoundingClientRect();
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
-        // 鼠标位置的数学坐标
         const mathX = self.toMathX(mx);
         const mathY = self.toMathY(my);
-        // 调整 scale
         const factor = e.deltaY < 0 ? 1.1 : 0.9;
         self.scale = Math.max(10, Math.min(200, self.scale * factor));
-        // 调整原点使鼠标位置的数学坐标不变
         self.originX = mx - mathX * self.scale;
         self.originY = my + mathY * self.scale;
         self.redraw();
+      });
+
+      // 触摸事件：单指拖拽平移，双指捏合缩放
+      this.canvas.addEventListener('touchstart', function (e) {
+        e.preventDefault();
+        if (e.touches.length === 1) {
+          self.dragging = true;
+          self.touchPinching = false;
+          self.lastMouseX = e.touches[0].clientX;
+          self.lastMouseY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+          self.dragging = false;
+          self.touchPinching = true;
+          const t1 = e.touches[0];
+          const t2 = e.touches[1];
+          self.lastTouchDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+          self.lastTouchCenterX = (t1.clientX + t2.clientX) / 2;
+          self.lastTouchCenterY = (t1.clientY + t2.clientY) / 2;
+        }
+      }, { passive: false });
+
+      this.canvas.addEventListener('touchmove', function (e) {
+        e.preventDefault();
+        if (self._touchRafPending) return;
+        self._touchRafPending = true;
+        requestAnimationFrame(function () {
+          self._touchRafPending = false;
+          if (!self.canvas) return;
+
+          if (self.dragging && e.touches.length === 1) {
+            const dx = e.touches[0].clientX - self.lastMouseX;
+            const dy = e.touches[0].clientY - self.lastMouseY;
+            self.originX += dx;
+            self.originY += dy;
+            self.lastMouseX = e.touches[0].clientX;
+            self.lastMouseY = e.touches[0].clientY;
+            self.redraw();
+          } else if (self.touchPinching && e.touches.length === 2) {
+            const t1 = e.touches[0];
+            const t2 = e.touches[1];
+            const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+            const centerX = (t1.clientX + t2.clientX) / 2;
+            const centerY = (t1.clientY + t2.clientY) / 2;
+
+            if (self.lastTouchDist > 0 && dist > 0) {
+              const rect = self.canvas.getBoundingClientRect();
+              const cx = self.lastTouchCenterX - rect.left;
+              const cy = self.lastTouchCenterY - rect.top;
+              const mathX = self.toMathX(cx);
+              const mathY = self.toMathY(cy);
+
+              const factor = dist / self.lastTouchDist;
+              self.scale = Math.max(10, Math.min(200, self.scale * factor));
+
+              const newCx = centerX - rect.left;
+              const newCy = centerY - rect.top;
+              self.originX = newCx - mathX * self.scale;
+              self.originY = newCy + mathY * self.scale;
+
+              const dx = centerX - self.lastTouchCenterX;
+              const dy = centerY - self.lastTouchCenterY;
+              self.originX += dx;
+              self.originY += dy;
+
+              self.redraw();
+            }
+
+            self.lastTouchDist = dist;
+            self.lastTouchCenterX = centerX;
+            self.lastTouchCenterY = centerY;
+          }
+        });
+      }, { passive: false });
+
+      this.canvas.addEventListener('touchend', function (e) {
+        e.preventDefault();
+        if (e.touches.length === 0) {
+          self.dragging = false;
+          self.touchPinching = false;
+          self.lastTouchDist = 0;
+        } else if (e.touches.length === 1) {
+          self.touchPinching = false;
+          self.lastTouchDist = 0;
+          self.dragging = true;
+          self.lastMouseX = e.touches[0].clientX;
+          self.lastMouseY = e.touches[0].clientY;
+        }
+      }, { passive: false });
+
+      this.canvas.addEventListener('touchcancel', function () {
+        self.dragging = false;
+        self.touchPinching = false;
+        self.lastTouchDist = 0;
       });
     }
 
