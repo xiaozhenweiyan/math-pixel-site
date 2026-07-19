@@ -201,12 +201,14 @@
     const calc = document.getElementById('calculator-page');
     const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
+    const funcPage = document.getElementById('function-page');
     if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.remove('active');
     if (calc) calc.classList.remove('active');
     if (pixelArt) pixelArt.classList.remove('active');
     if (settings) settings.classList.add('active');
+    if (funcPage) funcPage.classList.remove('active');
     // 把当前 profile 状态填入设置页表单
     const nicknameInput = document.getElementById('settings-nickname');
     if (nicknameInput) nicknameInput.value = profile.nickname;
@@ -2159,9 +2161,11 @@
 
   /**
    * showCalcStepsAnimated(steps, finalValue, error)
-   * 动态化显示运算过程：
+   * 动态化显示运算过程（合并动画版）：
    *   - 错误时立即显示，不延迟
-   *   - 用 setTimeout 逐步添加步骤行，每步 200ms 延迟
+   *   - 每步先以 .calc-step-highlight（高亮 + 上方位移 + 半透明）出现
+   *   - 200ms 后移除高亮类（变为正常样式，模拟下移合并动画）
+   *   - 每步总间隔 400ms（200ms 高亮 + 200ms 合并）
    *   - 最后添加 = 结果行
    */
   function showCalcStepsAnimated(steps, finalValue, error) {
@@ -2182,29 +2186,42 @@
 
     if (!steps || steps.length === 0) return;
 
-    // 逐步添加步骤行，每步 200ms 延迟 / add steps progressively, 200ms each
+    // 每步间隔 400ms：先高亮 200ms（上方位移 + 半透明），再正常 200ms（合并到位置）
+    const STEP_INTERVAL = 400;
+    const HIGHLIGHT_DURATION = 200;
+
     for (let i = 0; i < steps.length; i++) {
       (function (idx) {
-        const t = setTimeout(function () {
+        // 步骤出现：先以高亮样式添加
+        const tAppear = setTimeout(function () {
           const line = document.createElement('div');
-          line.className = 'calc-step-line';
+          line.className = 'calc-step-line calc-step-highlight';
           line.textContent = steps[idx];
           container.appendChild(line);
           container.scrollTop = container.scrollHeight;
-        }, idx * 200);
-        calcStepsAnimTimers.push(t);
+          // 200ms 后移除高亮类，触发 transition 过渡为正常样式（下移合并）
+          const tMerge = setTimeout(function () {
+            line.classList.remove('calc-step-highlight');
+          }, HIGHLIGHT_DURATION);
+          calcStepsAnimTimers.push(tMerge);
+        }, idx * STEP_INTERVAL);
+        calcStepsAnimTimers.push(tAppear);
       })(i);
     }
 
     // 最后添加 = 结果行 / final = result line
     if (finalValue !== null && finalValue !== undefined) {
-      const finalDelay = steps.length * 200;
+      const finalDelay = steps.length * STEP_INTERVAL;
       const t = setTimeout(function () {
         const finalLine = document.createElement('div');
-        finalLine.className = 'calc-step-line calc-step-final';
+        finalLine.className = 'calc-step-line calc-step-final calc-step-highlight';
         finalLine.textContent = '= ' + formatCalcResult(finalValue);
         container.appendChild(finalLine);
         container.scrollTop = container.scrollHeight;
+        const tMerge = setTimeout(function () {
+          finalLine.classList.remove('calc-step-highlight');
+        }, HIGHLIGHT_DURATION);
+        calcStepsAnimTimers.push(tMerge);
       }, finalDelay);
       calcStepsAnimTimers.push(t);
     }
@@ -2274,12 +2291,14 @@
     const calc = document.getElementById('calculator-page');
     const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
+    const funcPage = document.getElementById('function-page');
     if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.remove('hidden');
     if (predictor) predictor.classList.remove('active');
     if (calc) calc.classList.remove('active');
     if (pixelArt) pixelArt.classList.remove('active');
     if (settings) settings.classList.remove('active');
+    if (funcPage) funcPage.classList.remove('active');
   }
 
   function showAppLanding() {
@@ -2289,12 +2308,14 @@
     const calc = document.getElementById('calculator-page');
     const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
+    const funcPage = document.getElementById('function-page');
     if (appLanding) appLanding.classList.add('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.remove('active');
     if (calc) calc.classList.remove('active');
     if (pixelArt) pixelArt.classList.remove('active');
     if (settings) settings.classList.remove('active');
+    if (funcPage) funcPage.classList.remove('active');
   }
 
   function showPredictor() {
@@ -2304,12 +2325,14 @@
     const calc = document.getElementById('calculator-page');
     const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
+    const funcPage = document.getElementById('function-page');
     if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.add('active');
     if (calc) calc.classList.remove('active');
     if (pixelArt) pixelArt.classList.remove('active');
     if (settings) settings.classList.remove('active');
+    if (funcPage) funcPage.classList.remove('active');
     // 触发画布重绘
     setTimeout(function () {
       if (typeof resizeCanvases === 'function') resizeCanvases();
@@ -2324,12 +2347,38 @@
     const calc = document.getElementById('calculator-page');
     const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
+    const funcPage = document.getElementById('function-page');
     if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.remove('active');
     if (calc) calc.classList.add('active');
     if (pixelArt) pixelArt.classList.remove('active');
     if (settings) settings.classList.remove('active');
+    if (funcPage) funcPage.classList.remove('active');
+  }
+
+  function showFunction() {
+    const appLanding = document.getElementById('app-landing-page');
+    const landing = document.getElementById('landing-page');
+    const predictor = document.getElementById('predictor-page');
+    const calc = document.getElementById('calculator-page');
+    const pixelArt = document.getElementById('pixel-art-page');
+    const settings = document.getElementById('settings-page');
+    const funcPage = document.getElementById('function-page');
+    if (appLanding) appLanding.classList.remove('active');
+    if (landing) landing.classList.add('hidden');
+    if (predictor) predictor.classList.remove('active');
+    if (calc) calc.classList.remove('active');
+    if (pixelArt) pixelArt.classList.remove('active');
+    if (settings) settings.classList.remove('active');
+    if (funcPage) funcPage.classList.add('active');
+    // 进入页面后重绘一次函数坐标系（尺寸就位后）
+    setTimeout(function () {
+      if (window.functionPlotterInstance) {
+        window.functionPlotterInstance.resize();
+        window.functionPlotterInstance.redraw();
+      }
+    }, 50);
   }
 
   function showPixelArt() {
@@ -2339,12 +2388,14 @@
     const calc = document.getElementById('calculator-page');
     const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
+    const funcPage = document.getElementById('function-page');
     if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.remove('active');
     if (calc) calc.classList.remove('active');
     if (pixelArt) pixelArt.classList.add('active');
     if (settings) settings.classList.remove('active');
+    if (funcPage) funcPage.classList.remove('active');
     // 进入页面后重新生成一次，确保画布初始化正确
     setTimeout(function () {
       if (window.PixelArt && typeof window.PixelArt.regenerate === 'function') {
@@ -2356,8 +2407,10 @@
   function initPageSwitching() {
     const btnPredictor = document.getElementById('btn-enter-predictor');
     const btnCalc = document.getElementById('btn-enter-calculator');
+    const btnFunction = document.getElementById('btn-enter-function');
     const btnBackPredict = document.getElementById('btn-back-home-predict');
     const btnBackCalc = document.getElementById('btn-back-home-calc');
+    const btnBackFunction = document.getElementById('btn-back-home-function');
     const btnBackSettings = document.getElementById('btn-back-home-settings');
     const btnFloatingSettings = document.getElementById('btn-floating-settings');
     const btnEnterMath = document.getElementById('btn-enter-math');
@@ -2366,14 +2419,104 @@
     const btnBackHomeArt = document.getElementById('btn-back-home-art');
     if (btnPredictor) btnPredictor.addEventListener('click', showPredictor);
     if (btnCalc) btnCalc.addEventListener('click', showCalculator);
+    if (btnFunction) btnFunction.addEventListener('click', showFunction);
     if (btnBackPredict) btnBackPredict.addEventListener('click', showLanding);
     if (btnBackCalc) btnBackCalc.addEventListener('click', showLanding);
+    if (btnBackFunction) btnBackFunction.addEventListener('click', showLanding);
     if (btnFloatingSettings) btnFloatingSettings.addEventListener('click', showSettings);
     if (btnBackSettings) btnBackSettings.addEventListener('click', showAppLanding);
     if (btnEnterMath) btnEnterMath.addEventListener('click', showLanding);
     if (btnBackToTools) btnBackToTools.addEventListener('click', showAppLanding);
     if (btnEnterPixelArt) btnEnterPixelArt.addEventListener('click', showPixelArt);
     if (btnBackHomeArt) btnBackHomeArt.addEventListener('click', showAppLanding);
+  }
+
+  /**
+   * initFunctionPlotter()
+   * 初始化函数系统：创建 FunctionPlotter 实例并绑定按钮事件。
+   */
+  function initFunctionPlotter() {
+    const functionCanvas = document.getElementById('function-canvas');
+    if (!functionCanvas || !window.FunctionPlotter) return;
+    window.functionPlotterInstance = new window.FunctionPlotter(functionCanvas);
+
+    const addBtn = document.getElementById('btn-function-add');
+    const clearBtn = document.getElementById('btn-function-clear');
+    const input = document.getElementById('function-input');
+    const zoomIn = document.getElementById('btn-function-zoom-in');
+    const zoomOut = document.getElementById('btn-function-zoom-out');
+    const list = document.getElementById('function-list');
+
+    function renderFunctionList() {
+      if (!list) return;
+      while (list.firstChild) list.removeChild(list.firstChild);
+      const fps = window.functionPlotterInstance;
+      if (!fps || fps.functions.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'function-list-empty';
+        empty.textContent = '— 暂无函数 —';
+        list.appendChild(empty);
+        return;
+      }
+      for (let i = 0; i < fps.functions.length; i++) {
+        const f = fps.functions[i];
+        const item = document.createElement('div');
+        item.className = 'function-item';
+        const colorBox = document.createElement('div');
+        colorBox.className = 'function-item-color';
+        colorBox.style.backgroundColor = f.color;
+        const expr = document.createElement('div');
+        expr.className = 'function-item-expr';
+        expr.textContent = f.input;
+        const del = document.createElement('button');
+        del.className = 'function-item-delete';
+        del.textContent = '删除';
+        (function (idx) {
+          del.addEventListener('click', function () {
+            fps.removeFunction(idx);
+            renderFunctionList();
+          });
+        })(i);
+        item.appendChild(colorBox);
+        item.appendChild(expr);
+        item.appendChild(del);
+        list.appendChild(item);
+      }
+    }
+
+    function addFromInput() {
+      if (!input || !input.value || !input.value.trim()) {
+        showToast('请输入函数表达式');
+        return;
+      }
+      const result = window.functionPlotterInstance.addFunction(input.value);
+      if (result.ok) {
+        showToast('已添加函数');
+        input.value = '';
+        renderFunctionList();
+      } else {
+        showToast('错误：' + (result.error || '无效'));
+      }
+    }
+
+    if (addBtn) addBtn.addEventListener('click', addFromInput);
+    if (input) input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); addFromInput(); }
+    });
+    if (clearBtn) clearBtn.addEventListener('click', function () {
+      window.functionPlotterInstance.clearFunctions();
+      renderFunctionList();
+      showToast('已清除所有函数');
+    });
+    if (zoomIn) zoomIn.addEventListener('click', function () {
+      window.functionPlotterInstance.zoomByButton(10);
+    });
+    if (zoomOut) zoomOut.addEventListener('click', function () {
+      window.functionPlotterInstance.zoomByButton(-10);
+    });
+    // 初始绘制
+    window.functionPlotterInstance.redraw();
+    renderFunctionList();
   }
 
   // ============================================================
@@ -2441,6 +2584,9 @@
     // 计算器与页面切换初始化 / calculator and page switching init
     initCalculator();
     initPageSwitching();
+
+    // 函数系统初始化 / Function Plotter init
+    initFunctionPlotter();
 
     // 用户档案与设置初始化 / user profile and settings init
     const hasProfile = loadProfile();

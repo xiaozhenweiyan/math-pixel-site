@@ -81,8 +81,8 @@
   <div id="landing-page" class="landing-page hidden">
     <button class="floating-back-btn" id="btn-back-to-tools">← 返回工具首页</button>
     <div class="landing-content">
-      <h1 class="landing-title">数学学习网站</h1>
-      <p class="landing-subtitle">MATH LEARNING SITE</p>
+      <h1 class="landing-title">像素数学</h1>
+      <p class="landing-subtitle">PIXEL MATH</p>
       <div class="landing-cards">
         <button class="landing-card" id="btn-enter-predictor">
           <div class="landing-card-icon">
@@ -97,6 +97,25 @@
           <div class="landing-card-body">
             <div class="landing-card-title">预测系统</div>
             <div class="landing-card-desc">输入数字序列，40 种数学方法 + 神经网络预测</div>
+          </div>
+        </button>
+        <button class="landing-card" id="btn-enter-function">
+          <div class="landing-card-icon">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <rect x="6" y="6" width="36" height="36" stroke="#ffd700" stroke-width="3" fill="#1a1a2e"/>
+              <!-- 坐标轴 -->
+              <line x1="10" y1="38" x2="38" y2="38" stroke="#ffffff" stroke-width="2"/>
+              <line x1="10" y1="10" x2="10" y2="38" stroke="#ffffff" stroke-width="2"/>
+              <!-- 曲线 -->
+              <path d="M 12 36 Q 24 12 36 14" stroke="#ffd700" stroke-width="2.5" fill="none"/>
+              <circle cx="12" cy="36" r="2" fill="#1e90ff"/>
+              <circle cx="24" cy="20" r="2" fill="#ff4500"/>
+              <circle cx="36" cy="14" r="2" fill="#228b22"/>
+            </svg>
+          </div>
+          <div class="landing-card-body">
+            <div class="landing-card-title">函数系统</div>
+            <div class="landing-card-desc">输入函数表达式 · 绘制平面直角坐标系图像</div>
           </div>
         </button>
         <button class="landing-card" id="btn-enter-calculator">
@@ -128,7 +147,7 @@
   <div id="predictor-page" class="predictor-page">
   <button class="floating-back-btn" id="btn-back-home-predict">← 返回首页</button>
   <header class="pixel-panel" style="text-align:center; margin:20px;">
-    <h1 class="pixel-title">像素预测器 PIXEL PREDICTOR</h1>
+    <h1 class="pixel-title">预测系统 PIXEL PREDICTOR</h1>
     <p class="pixel-subtitle">输入数字序列 · 40 种数学方法预测 · 复古深空像素风</p>
   </header>
 
@@ -252,10 +271,47 @@
   </footer>
   </div><!-- end predictor-page -->
 
+  <div id="function-page" class="function-page">
+    <button class="floating-back-btn" id="btn-back-home-function">← 返回首页</button>
+    <header class="pixel-panel" style="text-align:center; margin:20px;">
+      <h1 class="pixel-title">函数系统 PIXEL FUNCTION</h1>
+      <p class="pixel-subtitle">输入函数表达式 · 平面直角坐标系 · 拖拽平移 · 滚轮缩放</p>
+    </header>
+    <main class="function-layout">
+      <div class="pixel-panel function-canvas-panel">
+        <h2>坐标系</h2>
+        <div class="function-canvas-wrap">
+          <canvas id="function-canvas"></canvas>
+          <div class="function-zoom-controls">
+            <button class="pixel-btn function-zoom-btn" id="btn-function-zoom-in">+</button>
+            <button class="pixel-btn function-zoom-btn" id="btn-function-zoom-out">−</button>
+          </div>
+        </div>
+      </div>
+      <div class="pixel-panel function-input-panel">
+        <h2>函数输入</h2>
+        <div class="function-input-row">
+          <input type="text" id="function-input" class="pixel-input" placeholder="输入函数，如 y=x^2 或 f(x)=sin(x)，按回车添加" autocomplete="off">
+          <button id="btn-function-add" class="pixel-btn">添加</button>
+          <button id="btn-function-clear" class="pixel-btn">清除全部</button>
+        </div>
+        <div class="function-list" id="function-list">
+          <div class="function-list-empty">— 暂无函数 —</div>
+        </div>
+        <div class="function-help">
+          <p>支持格式：y=表达式 或 f(x)=表达式</p>
+          <p>支持函数：sin, cos, tan, log, sqrt, abs, exp</p>
+          <p>支持运算：+ - * / ^（幂）</p>
+          <p>操作：鼠标拖拽平移 · 滚轮缩放 · 右下角 +/- 按钮缩放</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
   <div id="calculator-page" class="calculator-page">
     <button class="floating-back-btn" id="btn-back-home-calc">← 返回首页</button>
     <header class="pixel-panel" style="text-align:center; margin:20px;">
-      <h1 class="pixel-title">像素计算器 PIXEL CALCULATOR</h1>
+      <h1 class="pixel-title">计算机系统 PIXEL CALCULATOR</h1>
       <p class="pixel-subtitle">按键或键盘输入 · 支持四则运算 · 复古深空像素风</p>
     </header>
     <main class="calc-layout">
@@ -344,8 +400,8 @@
         </div>
 
         <div class="pixel-art-section">
-          <label class="settings-label">分辨率 <span id="art-resolution-value">32</span>px</label>
-          <input type="range" id="art-resolution" min="16" max="64" step="4" value="32" class="pixel-input">
+          <label class="settings-label">分辨率 <span id="art-resolution-value">48</span>px</label>
+          <input type="range" id="art-resolution" min="24" max="96" step="4" value="48" class="pixel-input">
         </div>
 
         <div class="pixel-art-section">
@@ -433,6 +489,7 @@
   <!-- Scripts loaded at end of body, in this exact order -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
   <script src="js/pixel-art.js"></script>
+  <script src="js/function-plotter.js"></script>
   <script src="js/predictors.js"></script>
   <script src="js/weights.js"></script>
   <script src="js/nn.js"></script>

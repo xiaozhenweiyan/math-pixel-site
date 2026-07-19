@@ -22,7 +22,7 @@
   let p5Instance = null;
   let currentSeed = 1;
   let currentMode = 'flow';
-  let resolution = 32;
+  let resolution = 48;
   let density = 50;
   let hue = 45;
   let isAnimating = false;
@@ -534,7 +534,7 @@
     const resValue = document.getElementById('art-resolution-value');
     if (resInput) {
       resInput.addEventListener('input', function () {
-        resolution = parseInt(this.value, 10) || 32;
+        resolution = parseInt(this.value, 10) || 48;
         if (resValue) resValue.textContent = resolution;
       });
       // change 事件再重建画布（避免拖动过程中频繁重建）
