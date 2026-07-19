@@ -48,6 +48,13 @@
 - [ ] 语言选择持久化到 localStorage，刷新后保持
 - [ ] document.title 随语言切换
 - [ ] 所有页面文字均走翻译（标题/按钮/标签/提示/toast）
+- [ ] wasm/ 目录存在，含 reaction-diffusion.c 源码 + build.sh 编译脚本
+- [ ] 预编译好的 reaction-diffusion.wasm 文件存在
+- [ ] 设置页有 Wasm 加速开关（支持时显示）
+- [ ] 开启 Wasm 后反应扩散模式使用 Wasm 计算
+- [ ] Wasm 加载失败时自动回退 JS 版本，不报错
+- [ ] Wasm 开关状态持久化到 localStorage
+- [ ] 相同种子 + 参数，Wasm 与 JS 版本输出视觉一致
 - [ ] 像素数学首页有"学习系统"卡片
 - [ ] 学习系统首页显示"数学学习卡片"分组
 - [ ] 分组下有四则运算学习卡片和混合运算学习卡片

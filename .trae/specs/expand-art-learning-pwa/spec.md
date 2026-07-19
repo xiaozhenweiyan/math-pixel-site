@@ -1,8 +1,8 @@
 # 像素工具大型更新 - Product Requirement Document
 
 ## Overview
-- **Summary**: 本次更新包含五大模块：函数系统参数滑块增强、艺术类扩展（像素绘图编辑器 + 像素音乐合成器 + 生成器新算法 + 分组重构）、学习系统新增（数学学习卡片：四则运算 + 混合运算，多页动画展示）、移动端适配 + PWA 离线支持、中英文双语国际化。所有改动保持复古深空像素风格，统一三层页面结构。
-- **Purpose**: 丰富网站功能矩阵，提升移动端体验，支持离线访问，形成学习/艺术两大分类的完整工具生态，并支持中英文双语自动切换。
+- **Summary**: 本次更新包含六大模块：函数系统参数滑块增强、艺术类扩展（像素绘图编辑器 + 像素音乐合成器 + 生成器新算法 + 分组重构）、学习系统新增（数学学习卡片：四则运算 + 混合运算，多页动画展示）、移动端适配 + PWA 离线支持、中英文双语国际化、WebAssembly 计算加速（反应扩散试点，设置页开关）。所有改动保持复古深空像素风格，统一三层页面结构。
+- **Purpose**: 丰富网站功能矩阵，提升移动端体验，支持离线访问，形成学习/艺术两大分类的完整工具生态，支持中英文双语自动切换，并用 WebAssembly 加速计算密集型算法。
 - **Target Users**: 学生（数学学习）、像素艺术爱好者、音乐创作者、移动端用户、中外用户。
 
 ## Goals
@@ -16,6 +16,7 @@
 - 完整移动端响应式适配 + 触摸手势支持
 - PWA 支持（manifest + service worker + 可安装 + 离线可用）
 - 中英文双语国际化（自动检测系统语言 + 设置页手动切换）
+- WebAssembly 加速（反应扩散试点，设置页开关，JS 回退）
 - 更新 README.md 并同步到 GitHub
 
 ## Non-Goals (Out of Scope)
@@ -144,7 +145,19 @@
 - 函数输入、计算器输入等用户输入内容不翻译
 - 代码中的错误提示、toast 消息也走翻译
 
-### FR-13: README.md 更新
+### FR-13: WebAssembly 计算加速
+- 反应扩散（Reaction-Diffusion）算法用 C 语言重写核心循环，Emscripten 编译为 WebAssembly
+- 新建 wasm/ 目录：reaction-diffusion.c 源码 + 编译脚本（build.sh）
+- 编译产物：reaction-diffusion.wasm + reaction-diffusion.js（胶水代码）
+- JS 端封装 WasmReactionDiffusion 类，接口与 JS 版本一致
+- 像素艺术生成器的反应扩散模式：启用 Wasm 时用 Wasm 版本，否则用 JS 版本
+- 设置页新增"Wasm 加速"开关（仅在浏览器支持 WebAssembly 时显示）
+- 开关状态持久化到 localStorage
+- 默认关闭，用户手动开启
+- Wasm 加载失败自动回退到 JS 版本
+- 画布尺寸较大时 Wasm 优势明显
+
+### FR-14: README.md 更新
 - 更新功能列表，涵盖所有新功能
 - 更新页面结构图
 - 更新文件结构
@@ -261,6 +274,18 @@
 - **Given**: 用户选择了语言偏好
 - **When**: 刷新页面
 - **Then**: 保持上次选择的语言
+- **Verification**: `programmatic`
+
+### AC-16: Wasm 加速开关
+- **Given**: 浏览器支持 WebAssembly
+- **When**: 用户在设置页开启 Wasm 加速
+- **Then**: 反应扩散模式使用 Wasm 版本计算
+- **Verification**: `human-judgment`
+
+### AC-17: Wasm 回退
+- **Given**: Wasm 加载失败或浏览器不支持
+- **When**: 使用反应扩散模式
+- **Then**: 自动回退到 JS 版本，不报错
 - **Verification**: `programmatic`
 
 ## Open Questions

@@ -189,7 +189,29 @@
   - `programmatic` TR-10.4: localStorage 中保存语言偏好，刷新后保持
   - `human-judgement` TR-10.5: 所有页面文字正确翻译，无遗漏
 
-## [ ] Task 11: 学习系统首页 + 数学学习卡片分组
+## [ ] Task 12: WebAssembly 反应扩散加速
+- **Priority**: medium
+- **Depends On**: None
+- **Description**:
+  - 新建 wasm/ 目录
+  - 用 C 语言写 reaction-diffusion.c：Gray-Scott 模型核心迭代循环
+  - 用 Emscripten 编译为 reaction-diffusion.wasm + 胶水 JS
+  - 编译脚本 build.sh（含 emcc 命令）
+  - JS 端封装 WasmReactionDiffusion 类，接口与 JS 版一致
+  - 像素艺术生成器的反应扩散模式：开关开启时用 Wasm，否则用 JS
+  - 设置页新增"Wasm 加速"开关（仅 WebAssembly 支持时显示）
+  - 开关状态存 localStorage，默认关闭
+  - Wasm 加载失败自动回退 JS 版本
+  - 提供预编译好的 .wasm 文件（本地先编译好再提交）
+- **Acceptance Criteria Addressed**: [AC-16, AC-17]
+- **Test Requirements**:
+  - `human-judgement` TR-12.1: 设置页有 Wasm 加速开关（支持时显示）
+  - `human-judgement` TR-12.2: 开启后反应扩散模式使用 Wasm 计算
+  - `programmatic` TR-12.3: Wasm 加载失败时自动回退 JS，不报错
+  - `human-judgement` TR-12.4: 开关状态刷新后保持
+  - `programmatic` TR-12.5: 相同种子 + 相同参数，Wasm 与 JS 版本输出视觉一致
+
+## [ ] Task 13: 学习系统首页 + 数学学习卡片分组
 - **Priority**: high
 - **Depends On**: None
 - **Description**:
@@ -207,9 +229,9 @@
   - `human-judgement` TR-10.3: 分组下有四则运算和混合运算两张卡片
   - `human-judgement` TR-10.4: 页面风格与像素数学首页一致
 
-## [ ] Task 12: 四则运算学习卡片
+## [ ] Task 14: 四则运算学习卡片
 - **Priority**: high
-- **Depends On**: [Task 11]
+- **Depends On**: [Task 13]
 - **Description**:
   - 新建 math-cards.js 模块
   - 四则运算学习页面（arithmetic-page）
@@ -231,9 +253,9 @@
   - `human-judgement` TR-11.5: 完成 20 关后显示结果页，含星级评价
   - `human-judgement` TR-11.6: 动画流畅，像素风一致
 
-## [ ] Task 13: 混合运算学习卡片
+## [ ] Task 15: 混合运算学习卡片
 - **Priority**: high
-- **Depends On**: [Task 12]
+- **Depends On**: [Task 14]
 - **Description**:
   - 混合运算学习页面（mixed-arithmetic-page）
   - 难度分级：简单 / 中等 / 困难
@@ -252,7 +274,7 @@
   - `human-judgement` TR-12.4: 完成后显示结果页和星级
   - `programmatic` TR-12.5: 题目答案为整数，无除不尽情况
 
-## [ ] Task 14: 移动端响应式适配
+## [ ] Task 16: 移动端响应式适配
 - **Priority**: high
 - **Depends On**: None
 - **Description**:
@@ -275,7 +297,7 @@
   - `human-judgement` TR-13.4: 像素绘图编辑器手指可绘画
   - `human-judgement` TR-13.5: 页面不溢出，无横向滚动条
 
-## [ ] Task 15: PWA 支持
+## [ ] Task 17: PWA 支持
 - **Priority**: high
 - **Depends On**: None
 - **Description**:
@@ -296,17 +318,18 @@
   - `human-judgement` TR-14.4: 可添加到主屏幕
   - `human-judgement` TR-14.5: 离线时已缓存页面可打开
 
-## [ ] Task 16: 更新 README.md
+## [ ] Task 18: 更新 README.md
 - **Priority**: medium
-- **Depends On**: [Task 4, Task 5, Task 7, Task 10, Task 11, Task 12, Task 14, Task 15]
+- **Depends On**: [Task 4, Task 5, Task 7, Task 10, Task 12, Task 13, Task 14, Task 16, Task 17]
 - **Description**:
   - 功能列表新增：像素绘图编辑器、像素音乐合成器、生成器 4 种新算法
   - 功能列表新增：学习系统（四则运算卡片、混合运算卡片）
   - 功能列表新增：函数系统参数滑块 + 动画
   - 功能列表新增：移动端适配 + PWA
   - 功能列表新增：中英文双语国际化
+  - 功能列表新增：WebAssembly 加速（反应扩散试点）
   - 更新页面结构图（含艺术类分组、学习系统分组）
-  - 更新文件结构（新增 js/pixel-drawing-editor.js、js/pixel-music.js、js/math-cards.js、manifest.json、service-worker.js、icons/）
+  - 更新文件结构（新增 js/pixel-drawing-editor.js、js/pixel-music.js、js/math-cards.js、js/i18n.js、wasm/、manifest.json、service-worker.js、icons/）
   - 更新使用说明
 - **Acceptance Criteria Addressed**: [AC-11]
 - **Test Requirements**:
@@ -314,9 +337,9 @@
   - `programmatic` TR-15.2: 页面结构图和文件结构已更新
   - `human-judgement` TR-15.3: 内容准确无误
 
-## [ ] Task 17: 提交并推送 GitHub
+## [ ] Task 19: 提交并推送 GitHub
 - **Priority**: high
-- **Depends On**: [Task 1-16]
+- **Depends On**: [Task 1-18]
 - **Description**:
   - 所有改动分组创建 conventional commits
   - 推送到 origin main 和 gh-pages
@@ -334,13 +357,13 @@
 - [Task 6] depends on [Task 5]
 - [Task 7] depends on [Task 3]
 - [Task 8] depends on [Task 7]
-- [Task 12] depends on [Task 11]
-- [Task 13] depends on [Task 12]
-- [Task 16] depends on [Task 4, Task 5, Task 7, Task 10, Task 11, Task 12, Task 14, Task 15]
-- [Task 17] depends on all
+- [Task 14] depends on [Task 13]
+- [Task 15] depends on [Task 14]
+- [Task 18] depends on [Task 4, Task 5, Task 7, Task 10, Task 12, Task 13, Task 14, Task 16, Task 17]
+- [Task 19] depends on all
 
 # 可并行任务
-- Task 1/4/9/10/11/14/15 可并行（独立模块）
+- Task 1/4/9/10/12/13/16/17 可并行（独立模块）
 - Task 3 独立（首页重构）
 - Task 2 等 Task 1
 - Task 5/7 等 Task 3
