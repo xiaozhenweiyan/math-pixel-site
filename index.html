@@ -22,16 +22,6 @@
 
   <!-- 像素风格工具网站首页 / App Landing Page -->
   <div id="app-landing-page" class="app-landing-page">
-    <div class="app-user-bar pixel-panel">
-      <div class="app-user-left">
-        <div class="app-avatar" id="app-avatar">访</div>
-        <span class="app-nickname" id="app-nickname">访客</span>
-      </div>
-      <div class="app-user-right">
-        <button id="btn-app-settings" class="pixel-btn">设置</button>
-        <button id="btn-app-logout" class="pixel-btn">退出</button>
-      </div>
-    </div>
     <div class="app-landing-content">
       <h1 class="app-landing-title">像素风格工具网站</h1>
       <p class="app-landing-subtitle">PIXEL TOOLS</p>
@@ -55,6 +45,9 @@
         <!-- 后续可在此添加更多工具卡片 -->
       </div>
     </div>
+    <footer class="app-landing-footer">
+      <a href="https://github.com/xiaozhenweiyan/pixel-tools" target="_blank" rel="noopener noreferrer">GitHub 仓库：xiaozhenweiyan/pixel-tools</a>
+    </footer>
     <div class="landing-pixels"></div>
   </div>
 
@@ -246,41 +239,44 @@
           <div class="calc-history" id="calc-history">— 等待输入 —</div>
           <div class="calc-current" id="calc-current">0</div>
         </div>
-        <div class="calc-bottom-row">
-          <div class="calc-keys">
-            <button class="pixel-btn calc-key" data-key="7">7</button>
-            <button class="pixel-btn calc-key" data-key="8">8</button>
-            <button class="pixel-btn calc-key" data-key="9">9</button>
-            <button class="pixel-btn calc-key calc-key-op" data-key="/">÷</button>
-            <button class="pixel-btn calc-key calc-key-op" data-key="C">C</button>
+        <div class="calc-keys">
+          <button class="pixel-btn calc-key" data-key="7">7</button>
+          <button class="pixel-btn calc-key" data-key="8">8</button>
+          <button class="pixel-btn calc-key" data-key="9">9</button>
+          <button class="pixel-btn calc-key calc-key-op" data-key="/">÷</button>
+          <button class="pixel-btn calc-key calc-key-op" data-key="C">C</button>
 
-            <button class="pixel-btn calc-key" data-key="4">4</button>
-            <button class="pixel-btn calc-key" data-key="5">5</button>
-            <button class="pixel-btn calc-key" data-key="6">6</button>
-            <button class="pixel-btn calc-key calc-key-op" data-key="*">×</button>
-            <button class="pixel-btn calc-key calc-key-op" data-key="(">(</button>
+          <button class="pixel-btn calc-key" data-key="4">4</button>
+          <button class="pixel-btn calc-key" data-key="5">5</button>
+          <button class="pixel-btn calc-key" data-key="6">6</button>
+          <button class="pixel-btn calc-key calc-key-op" data-key="*">×</button>
+          <button class="pixel-btn calc-key calc-key-op" data-key="(">(</button>
 
-            <button class="pixel-btn calc-key" data-key="1">1</button>
-            <button class="pixel-btn calc-key" data-key="2">2</button>
-            <button class="pixel-btn calc-key" data-key="3">3</button>
-            <button class="pixel-btn calc-key calc-key-op" data-key="-">−</button>
-            <button class="pixel-btn calc-key calc-key-op" data-key=")">)</button>
+          <button class="pixel-btn calc-key" data-key="1">1</button>
+          <button class="pixel-btn calc-key" data-key="2">2</button>
+          <button class="pixel-btn calc-key" data-key="3">3</button>
+          <button class="pixel-btn calc-key calc-key-op" data-key="-">−</button>
+          <button class="pixel-btn calc-key calc-key-op" data-key=")">)</button>
 
-            <button class="pixel-btn calc-key" data-key="0">0</button>
-            <button class="pixel-btn calc-key" data-key=".">.</button>
-            <button class="pixel-btn calc-key calc-key-op" data-key="+">+</button>
-            <button class="pixel-btn calc-key calc-key-eq" data-key="=">=</button>
-            <button class="pixel-btn calc-key calc-key-op" data-key="back">⌫</button>
-            <button class="pixel-btn calc-key calc-key-op" data-key="sqrt" style="grid-column: span 5;">√</button>
-          </div>
-          <div class="calc-steps-wrap">
-            <div class="calc-steps-title">运算过程</div>
-            <div class="calc-steps" id="calc-steps">
-              <div class="calc-step-empty">— 等待计算 —</div>
-            </div>
-          </div>
+          <button class="pixel-btn calc-key" data-key="0">0</button>
+          <button class="pixel-btn calc-key" data-key=".">.</button>
+          <button class="pixel-btn calc-key calc-key-op" data-key="+">+</button>
+          <button class="pixel-btn calc-key calc-key-eq" data-key="=">=</button>
+          <button class="pixel-btn calc-key calc-key-op" data-key="back">⌫</button>
+
+          <button class="pixel-btn calc-key calc-key-op" data-key="sin">sin</button>
+          <button class="pixel-btn calc-key calc-key-op" data-key="cos">cos</button>
+          <button class="pixel-btn calc-key calc-key-op" data-key="tan">tan</button>
+          <button class="pixel-btn calc-key calc-key-op" data-key="sqrt">√</button>
+          <button class="pixel-btn calc-key calc-key-op" id="calc-angle-mode" data-key="angle-mode">RAD</button>
         </div>
         <input type="text" id="calc-input" class="pixel-input calc-input" placeholder="输入表达式，如 1+2*3，按回车求值" autocomplete="off">
+        <div class="calc-steps-wrap">
+          <div class="calc-steps-title">运算过程</div>
+          <div class="calc-steps" id="calc-steps">
+            <div class="calc-step-empty">— 等待计算 —</div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -325,6 +321,10 @@
         <div class="settings-section">
           <button id="btn-reset-bg" class="pixel-btn">恢复默认背景</button>
         </div>
+
+        <div class="settings-section">
+          <button id="btn-settings-logout" class="pixel-btn">退出登录</button>
+        </div>
       </div>
     </main>
     <footer class="pixel-panel" style="text-align:center; margin:20px;">
@@ -339,6 +339,8 @@
       <path d="M24 4 L24 12 M24 36 L24 44 M4 24 L12 24 M36 24 L44 24 M10 10 L16 16 M32 32 L38 38 M10 38 L16 32 M32 16 L38 10" stroke="#ffd700" stroke-width="3" stroke-linecap="square"/>
     </svg>
   </button>
+
+  <button class="floating-avatar" id="floating-avatar" title="访客" aria-label="个人设置"></button>
 
   <div id="toast" class="pixel-panel pixel-toast" style="display:none;"></div>
 

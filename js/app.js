@@ -60,6 +60,12 @@
   const LONGTERM_SERIES_KEY = 'longterm_series';
   const LONGTERM_MODE_KEY = 'longterm_mode';
 
+  // 计算器角度模式 / calculator angle mode: 'RAD' or 'DEG'
+  let calcAngleMode = 'RAD';
+
+  // 计算器运算过程动画计时器 / calc steps animation timers
+  let calcStepsAnimTimers = [];
+
   // ============================================================
   // 用户档案 / User Profile (sessionStorage, 临时账号)
   // ============================================================
@@ -152,35 +158,36 @@
   }
 
   // ============================================================
-  // 工具首页用户信息栏 / App User Bar
+  // 浮动头像按钮 / Floating Avatar Button
   // ============================================================
-  function updateAppUserBar() {
-    const avatarEl = document.getElementById('app-avatar');
-    const nicknameEl = document.getElementById('app-nickname');
-    if (nicknameEl) nicknameEl.textContent = profile.nickname;
-    if (avatarEl) {
-      if (profile.avatar) {
-        avatarEl.style.backgroundImage = 'url(' + profile.avatar + ')';
-        avatarEl.textContent = '';
-      } else {
-        avatarEl.style.backgroundImage = '';
-        const firstChar = profile.nickname ? profile.nickname.charAt(0) : '?';
-        avatarEl.textContent = firstChar;
-      }
+  function updateFloatingAvatar() {
+    const avatarEl = document.getElementById('floating-avatar');
+    if (!avatarEl) return;
+    // 标题 tooltip 显示昵称
+    avatarEl.title = profile.nickname || '访客';
+    if (profile.avatar) {
+      avatarEl.style.backgroundImage = 'url(' + profile.avatar + ')';
+      avatarEl.textContent = '';
+    } else {
+      avatarEl.style.backgroundImage = '';
+      const firstChar = profile.nickname ? profile.nickname.charAt(0) : '?';
+      avatarEl.textContent = firstChar;
     }
   }
 
+  // 兼容旧调用：updateAppUserBar 现在更新 floating-avatar
+  function updateAppUserBar() {
+    updateFloatingAvatar();
+  }
+
+  function initFloatingAvatar() {
+    const avatarBtn = document.getElementById('floating-avatar');
+    if (avatarBtn) avatarBtn.addEventListener('click', showSettings);
+  }
+
   function initAppUserBar() {
-    const settingsBtn = document.getElementById('btn-app-settings');
-    const logoutBtn = document.getElementById('btn-app-logout');
-    if (settingsBtn) settingsBtn.addEventListener('click', showSettings);
-    if (logoutBtn) logoutBtn.addEventListener('click', function () {
-      clearProfile();
-      applyBackground();
-      updateAppUserBar();
-      showRegisterModal();
-      showToast('已退出，数据已清除');
-    });
+    // 顶部用户栏已删除，仅初始化浮动头像按钮 / top bar removed, only init floating avatar
+    initFloatingAvatar();
   }
 
   // ============================================================
@@ -460,6 +467,19 @@
         saveProfile();
         applyBackground();
         showToast('已恢复默认背景');
+      });
+    }
+
+    // 退出登录（从设置页退出，清除临时账号）/ logout from settings
+    const logoutBtn = document.getElementById('btn-settings-logout');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', function () {
+        clearProfile();
+        applyBackground();
+        updateFloatingAvatar();
+        showAppLanding();
+        showRegisterModal();
+        showToast('已退出，数据已清除');
       });
     }
   }
@@ -1556,12 +1576,96 @@
   // ============================================================
 
   /**
+   * getExactTrig(func, angle, mode) → number | null
+   * 特殊角度精确值查表：
+   *   - DEG 模式特殊角度（度数）：0/30/45/60/90/120/135/150/180/270/360
+   *   - RAD 模式特殊角度（弧度）：0/π/6/π/4/π/3/π/2/π/3π/2/2π
+   *   - 命中返回精确值（如 sin(30°)=0.5），未命中返回 null
+   */
+  function getExactTrig(func, angle, mode) {
+    if (typeof angle !== 'number' || !Number.isFinite(angle) && !Number.isNaN(angle)) {
+      return null;
+    }
+    if (Number.isNaN(angle)) return null;
+    const SQRT2 = Math.SQRT2;       // √2
+    const SQRT3 = Math.sqrt(3);    // √3
+    const PI = Math.PI;
+
+    // DEG 角度表（键为度数整数）
+    const degTable = {
+      0:   { sin: 0,         cos: 1,          tan: 0 },
+      30:  { sin: 0.5,       cos: SQRT3 / 2,  tan: SQRT3 / 3 },
+      45:  { sin: SQRT2 / 2, cos: SQRT2 / 2,  tan: 1 },
+      60:  { sin: SQRT3 / 2, cos: 0.5,        tan: SQRT3 },
+      90:  { sin: 1,        cos: 0,          tan: Infinity },
+      120: { sin: SQRT3 / 2, cos: -0.5,       tan: -SQRT3 },
+      135: { sin: SQRT2 / 2, cos: -SQRT2 / 2, tan: -1 },
+      150: { sin: 0.5,      cos: -SQRT3 / 2, tan: -SQRT3 / 3 },
+      180: { sin: 0,        cos: -1,         tan: 0 },
+      270: { sin: -1,       cos: 0,          tan: Infinity },
+      360: { sin: 0,        cos: 1,          tan: 0 }
+    };
+
+    if (mode === 'DEG') {
+      // DEG 模式：angle 是度数
+      const deg = Math.round(angle);
+      if (Math.abs(angle - deg) > 1e-9) return null;  // 非整数度数不查表
+      if (!Object.prototype.hasOwnProperty.call(degTable, deg)) return null;
+      return degTable[deg][func];
+    } else {
+      // RAD 模式：angle 是弧度，匹配特殊弧度
+      const rads = [
+        { rad: 0,          deg: 0 },
+        { rad: PI / 6,     deg: 30 },
+        { rad: PI / 4,     deg: 45 },
+        { rad: PI / 3,     deg: 60 },
+        { rad: PI / 2,     deg: 90 },
+        { rad: PI,         deg: 180 },
+        { rad: 3 * PI / 2, deg: 270 },
+        { rad: 2 * PI,     deg: 360 }
+      ];
+      for (let i = 0; i < rads.length; i++) {
+        if (Math.abs(angle - rads[i].rad) < 1e-9) {
+          return degTable[rads[i].deg][func];
+        }
+      }
+      return null;
+    }
+  }
+
+  /**
+   * trigEval(func, x, mode) → number
+   * 三角函数求值：
+   *   1. 先查表（getExactTrig），命中返回精确值
+   *   2. 未命中：DEG 模式转弧度后调 Math.sin/cos/tan
+   *   3. 浮点吸附：|result - round(result)| < 1e-10 → round；|result| < 1e-15 → 0
+   */
+  function trigEval(func, x, mode) {
+    const exact = getExactTrig(func, x, mode);
+    if (exact !== null && exact !== undefined) return exact;
+    if (typeof x !== 'number' || !Number.isFinite(x)) {
+      return NaN;
+    }
+    const rad = (mode === 'DEG') ? x * Math.PI / 180 : x;
+    let result;
+    if (func === 'sin') result = Math.sin(rad);
+    else if (func === 'cos') result = Math.cos(rad);
+    else if (func === 'tan') result = Math.tan(rad);
+    else return NaN;
+    // 浮点吸附 / floating point snap
+    if (Math.abs(result) < 1e-15) result = 0;
+    if (Math.abs(result - Math.round(result)) < 1e-10) result = Math.round(result);
+    return result;
+  }
+
+  /**
    * calculateExpr(expr) → { ok: boolean, value?: number, error?: string }
    * 安全表达式求值：
-   *   1. 字符白名单：数字、+ - * / ( ) . 空格
+   *   1. 字符白名单：数字、+ - * / ( ) . 空格、sqrt/sin/cos/tan 函数名
    *   2. 替换 × ÷ − 为 * / -
    *   3. 用 Function 构造器求值（不用 eval）
-   *   4. 结果校验必须是有限数
+   *   4. 三角函数经 trigEval 包装（含特殊角度查表 + 浮点吸附）
+   *   5. 结果校验必须是数字（允许 Infinity / -Infinity，如 tan(90°)）
    */
   function calculateExpr(expr) {
     if (typeof expr !== 'string' || expr.trim() === '') {
@@ -1572,26 +1676,40 @@
       .replace(/×/g, '*')
       .replace(/÷/g, '/')
       .replace(/−/g, '-')
-      .replace(/\s+/g, '')
-      .replace(/sqrt\(/g, 'Math.sqrt(');
-    // 白名单校验：允许数字、运算符、括号、点、Math.sqrt
-    if (!/^[-+*/().0-9Mathsqrt]+$/.test(cleaned)) {
+      .replace(/\s+/g, '');
+    // 校验：移除已知函数名后，剩余应只含数字 / 运算符 / 括号 / 小数点
+    const checkStr = cleaned
+      .replace(/sqrt/g, '')
+      .replace(/sin/g, '')
+      .replace(/cos/g, '')
+      .replace(/tan/g, '');
+    if (!/^[-+*/().0-9]+$/.test(checkStr)) {
       return { ok: false, error: '包含非法字符' };
     }
+    // 替换函数名为内部占位（sqrt 保留 Math.sqrt）
+    cleaned = cleaned
+      .replace(/sqrt\(/g, 'Math.sqrt(')
+      .replace(/sin\(/g, '__sin(')
+      .replace(/cos\(/g, '__cos(')
+      .replace(/tan\(/g, '__tan(');
     // 不允许连续运算符结尾
     if (/[+\-*/]$/.test(cleaned) && cleaned.length > 0) {
-      // 允许以负号开头，但其他结尾视为不完整
       if (!/^-$/.test(cleaned)) {
         return { ok: false, error: '表达式不完整' };
       }
     }
     try {
+      // 三角函数包装（注入到 Function 作用域）/ inject trig wrappers
+      const __sin = function (x) { return trigEval('sin', x, calcAngleMode); };
+      const __cos = function (x) { return trigEval('cos', x, calcAngleMode); };
+      const __tan = function (x) { return trigEval('tan', x, calcAngleMode); };
       // 使用 Function 构造器（比 eval 安全一些，但仍然要靠白名单防护）
-      const fn = new Function('return (' + cleaned + ');');
-      const result = fn();
-      if (typeof result !== 'number' || !Number.isFinite(result)) {
+      const fn = new Function('__sin', '__cos', '__tan', 'return (' + cleaned + ');');
+      const result = fn(__sin, __cos, __tan);
+      if (typeof result !== 'number' || Number.isNaN(result)) {
         return { ok: false, error: '结果无效' };
       }
+      // 允许 Infinity / -Infinity（如 tan(90°)）/ allow Infinity (e.g. tan(90°))
       return { ok: true, value: result };
     } catch (e) {
       return { ok: false, error: '语法错误' };
@@ -1599,12 +1717,79 @@
   }
 
   /**
+   * expandScientific(str) → string
+   * 把科学计数法字符串（如 1.23e+21）展开为完整数字字符串（如 1230000000000000000000）。
+   * 用字符串处理避免 BigInt 精度限制。
+   */
+  function expandScientific(str) {
+    const m = str.match(/^(-?\d+\.?\d*)[eE]([+-]?\d+)$/);
+    if (!m) return str;
+    let mantissa = m[1];
+    let exp = parseInt(m[2], 10);
+    const dotIdx = mantissa.indexOf('.');
+    const isNeg = mantissa.charAt(0) === '-';
+    if (isNeg) mantissa = mantissa.slice(1);
+    if (dotIdx < 0) {
+      // 整数尾数
+      if (exp >= 0) {
+        const out = mantissa + '0'.repeat(exp);
+        return isNeg ? '-' + out : out;
+      } else {
+        const absExp = -exp;
+        let out;
+        if (absExp >= mantissa.length) {
+          out = '0.' + '0'.repeat(absExp - mantissa.length) + mantissa;
+        } else {
+          out = mantissa.slice(0, mantissa.length - absExp) + '.' + mantissa.slice(mantissa.length - absExp);
+        }
+        return isNeg ? '-' + out : out;
+      }
+    } else {
+      // 小数尾数
+      const intPart = mantissa.slice(0, dotIdx);
+      const fracPart = mantissa.slice(dotIdx + 1);
+      const allDigits = intPart + fracPart;
+      const newDotPos = intPart.length + exp;
+      let out;
+      if (newDotPos <= 0) {
+        out = '0.' + '0'.repeat(-newDotPos) + allDigits;
+      } else if (newDotPos >= allDigits.length) {
+        out = allDigits + '0'.repeat(newDotPos - allDigits.length);
+      } else {
+        out = allDigits.slice(0, newDotPos) + '.' + allDigits.slice(newDotPos);
+      }
+      return isNeg ? '-' + out : out;
+    }
+  }
+
+  /**
    * formatCalcResult(value) → string
-   * 格式化计算结果：整数显示整数，浮点保留最多 10 位小数。
+   * 格式化计算结果：
+   *   - NaN → '错误'
+   *   - Infinity / -Infinity → 'Infinity' / '-Infinity'
+   *   - 整数 → 直接字符串
+   *   - 科学计数法 → 展开为完整字符串
+   *   - 浮点数 → 保留最多 20 位小数（去尾零）
    */
   function formatCalcResult(value) {
-    if (Number.isInteger(value)) return String(value);
-    return String(parseFloat(value.toFixed(10)));
+    if (value === null || value === undefined) return '—';
+    if (typeof value !== 'number' || !isFinite(value)) {
+      if (Number.isNaN(value)) return '错误';
+      return String(value);  // Infinity 或 -Infinity
+    }
+    let str = String(value);
+    // 检测科学计数法并展开
+    if (str.indexOf('e') >= 0 || str.indexOf('E') >= 0) {
+      str = expandScientific(str);
+    }
+    // 浮点数保留最多 20 位小数 / keep at most 20 decimal places
+    if (str.indexOf('.') >= 0) {
+      const num = parseFloat(str);
+      if (isFinite(num)) {
+        str = num.toFixed(20).replace(/0+$/, '').replace(/\.$/, '');
+      }
+    }
+    return str;
   }
 
   /**
@@ -1621,13 +1806,22 @@
   /**
    * calcAppendKey(key)
    * 把按键字符追加到 calc-input 末尾。
+   * 特殊键：sqrt/sin/cos/tan 追加函数名 + (；angle-mode 切换 RAD/DEG；C 清空；back 回退；= 求值。
    */
   function calcAppendKey(key) {
     const input = document.getElementById('calc-input');
     if (!input) return;
-    if (key === 'sqrt') {
-      input.value += 'sqrt(';
+    if (key === 'sqrt' || key === 'sin' || key === 'cos' || key === 'tan') {
+      input.value += key + '(';
       calcUpdateCurrent();
+      return;
+    }
+    if (key === 'angle-mode') {
+      // 切换 RAD ↔ DEG，不修改输入框
+      calcAngleMode = (calcAngleMode === 'RAD') ? 'DEG' : 'RAD';
+      const btn = document.getElementById('calc-angle-mode');
+      if (btn) btn.textContent = calcAngleMode;
+      showToast('角度模式：' + calcAngleMode);
       return;
     }
     if (key === 'C') {
@@ -1671,8 +1865,24 @@
         const inner = sqrtMatch[1];
         const evalRes = calculateExpr(inner);
         if (!evalRes.ok) return { steps: steps, finalValue: null, error: '根号内表达式错误' };
-        const replacement = String(evalRes.value);
+        // 注意：要对 inner 求值结果应用 sqrt，不能用 inner 直接结果
+        const sqrtVal = Math.sqrt(evalRes.value);
+        const replacement = String(sqrtVal);
         current = current.replace(sqrtMatch[0], replacement);
+        steps.push(current);
+        continue;
+      }
+
+      // 1b. 处理 sin(...)/cos(...)/tan(...)
+      const trigMatch = current.match(/(sin|cos|tan)\(([^()]+)\)/);
+      if (trigMatch) {
+        const func = trigMatch[1];
+        const inner = trigMatch[2];
+        const evalRes = calculateExpr(inner);
+        if (!evalRes.ok) return { steps: steps, finalValue: null, error: func + ' 内表达式错误' };
+        const trigVal = trigEval(func, evalRes.value, calcAngleMode);
+        const replacement = String(trigVal);
+        current = current.replace(trigMatch[0], replacement);
         steps.push(current);
         continue;
       }
@@ -1752,6 +1962,10 @@
     return { steps: steps, finalValue: finalRes.value, error: null };
   }
 
+  /**
+   * showCalcSteps(steps, finalValue, error)
+   * 一次性显示全部步骤（保留供调用）。
+   */
   function showCalcSteps(steps, finalValue, error) {
     const container = document.getElementById('calc-steps');
     if (!container) return;
@@ -1787,8 +2001,73 @@
   }
 
   /**
+   * clearCalcStepsAnimTimers()
+   * 清除所有正在等待的运算过程动画计时器。
+   */
+  function clearCalcStepsAnimTimers() {
+    for (let i = 0; i < calcStepsAnimTimers.length; i++) {
+      clearTimeout(calcStepsAnimTimers[i]);
+    }
+    calcStepsAnimTimers = [];
+  }
+
+  /**
+   * showCalcStepsAnimated(steps, finalValue, error)
+   * 动态化显示运算过程：
+   *   - 错误时立即显示，不延迟
+   *   - 用 setTimeout 逐步添加步骤行，每步 200ms 延迟
+   *   - 最后添加 = 结果行
+   */
+  function showCalcStepsAnimated(steps, finalValue, error) {
+    const container = document.getElementById('calc-steps');
+    if (!container) return;
+    clearCalcStepsAnimTimers();
+    // 清空 / clear
+    while (container.firstChild) container.removeChild(container.firstChild);
+
+    if (error) {
+      // 错误时立即显示，不延迟
+      const errDiv = document.createElement('div');
+      errDiv.className = 'calc-step-error calc-step-line';
+      errDiv.textContent = '错误：' + error;
+      container.appendChild(errDiv);
+      return;
+    }
+
+    if (!steps || steps.length === 0) return;
+
+    // 逐步添加步骤行，每步 200ms 延迟 / add steps progressively, 200ms each
+    for (let i = 0; i < steps.length; i++) {
+      (function (idx) {
+        const t = setTimeout(function () {
+          const line = document.createElement('div');
+          line.className = 'calc-step-line';
+          line.textContent = steps[idx];
+          container.appendChild(line);
+          container.scrollTop = container.scrollHeight;
+        }, idx * 200);
+        calcStepsAnimTimers.push(t);
+      })(i);
+    }
+
+    // 最后添加 = 结果行 / final = result line
+    if (finalValue !== null && finalValue !== undefined) {
+      const finalDelay = steps.length * 200;
+      const t = setTimeout(function () {
+        const finalLine = document.createElement('div');
+        finalLine.className = 'calc-step-line calc-step-final';
+        finalLine.textContent = '= ' + formatCalcResult(finalValue);
+        container.appendChild(finalLine);
+        container.scrollTop = container.scrollHeight;
+      }, finalDelay);
+      calcStepsAnimTimers.push(t);
+    }
+  }
+
+  /**
    * calcEvaluate()
-   * 求值并把结果加入历史。
+   * 求值并把结果加入历史。求值成功后立即显示 finalValue 到 calc-current，
+   * 运算过程在 calc-steps 中逐步动画显示（每步 200ms）。
    */
   function calcEvaluate() {
     const input = document.getElementById('calc-input');
@@ -1800,16 +2079,17 @@
     const result = calculateExpr(expr);
     if (result.ok) {
       const formatted = formatCalcResult(result.value);
+      // 立即显示最终结果 / show final result immediately
       if (history) history.textContent = expr + ' =';
       current.textContent = formatted;
       input.value = formatted;
-      // 生成并显示运算过程
+      // 生成并逐步动画显示运算过程 / generate steps and animate
       const trace = computeStepsWithTrace(expr);
-      showCalcSteps(trace.steps, trace.finalValue, trace.error);
+      showCalcStepsAnimated(trace.steps, trace.finalValue, trace.error);
     } else {
       if (history) history.textContent = expr;
       current.textContent = '错误：' + (result.error || '无效');
-      showCalcSteps([], null, result.error || '无效');
+      showCalcStepsAnimated([], null, result.error || '无效');
     }
   }
 

@@ -1109,10 +1109,13 @@ footer.pixel-panel p {
 
 /* 运算过程显示 */
 .calc-steps-wrap {
+  width: 100%;
+  margin-top: 12px;
   border: 3px solid #ffffff;
   border-radius: 4px;
   background: #0d0d1f;
   padding: 12px;
+  box-sizing: border-box;
 }
 .calc-steps-title {
   color: #ffd700;
@@ -1153,27 +1156,6 @@ footer.pixel-panel p {
   padding: 24px 0;
 }
 
-/* 桌面端：按键和过程框并排 */
-.calc-bottom-row {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-@media (min-width: 768px) {
-  .calc-bottom-row {
-    flex-direction: row;
-    align-items: flex-start;
-  }
-  .calc-bottom-row > * {
-    flex: 1;
-  }
-}
-@media (max-width: 767px) {
-  .calc-panel {
-    flex-direction: column;
-  }
-}
-
 /* ============================================================
    浮动返回按钮 / Floating Back Button
    ============================================================ */
@@ -1206,7 +1188,7 @@ footer.pixel-panel p {
 .floating-settings-btn {
   position: fixed;
   top: 12px;
-  right: 120px;
+  right: 60px;
   z-index: 9999;
   width: 40px;
   height: 40px;
@@ -1238,6 +1220,44 @@ footer.pixel-panel p {
 }
 @media (prefers-reduced-motion: reduce) {
   .floating-settings-btn svg { animation: none; }
+}
+
+/* ============================================================
+   浮动头像按钮 / Floating Avatar Button
+   ============================================================ */
+.floating-avatar {
+  position: fixed;
+  top: 12px;
+  left: 16px;
+  z-index: 9999;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background-color: #2d2d44;
+  background-size: cover;
+  background-position: center;
+  border: 3px solid #ffffff;
+  border-radius: 4px;
+  color: #ffd700;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 #000000;
+  transition: transform 0.05s, box-shadow 0.05s;
+  overflow: hidden;
+}
+.floating-avatar:hover {
+  background-color: #3d3d54;
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #000000;
+}
+.floating-avatar:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 #000000;
 }
 
 /* ============================================================
@@ -1488,4 +1508,29 @@ footer.pixel-panel p {
   font-size: 13px;
   opacity: 0.8;
   line-height: 1.4;
+}
+
+/* 工具首页底部 footer / App landing footer */
+.app-landing-footer {
+  text-align: center;
+  padding: 16px;
+  color: #ffd700;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  letter-spacing: 1px;
+  position: relative;
+  z-index: 2;
+}
+.app-landing-footer a {
+  color: #ffd700;
+  text-decoration: none;
+  border-bottom: 2px solid #ffd700;
+  padding-bottom: 2px;
+  transition: opacity 0.15s;
+}
+.app-landing-footer a:hover {
+  opacity: 0.8;
+}
+.app-landing-footer a:active {
+  opacity: 0.6;
 }
