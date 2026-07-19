@@ -195,26 +195,7 @@
   // ============================================================
 
   function showSettings() {
-    const appLanding = document.getElementById('app-landing-page');
-    const landing = document.getElementById('landing-page');
-    const predictor = document.getElementById('predictor-page');
-    const calc = document.getElementById('calculator-page');
-    const pixelArt = document.getElementById('pixel-art-page');
-    const settings = document.getElementById('settings-page');
-    const funcPage = document.getElementById('function-page');
-    const learningLanding = document.getElementById('learning-landing-page');
-    const pixelMusic = document.getElementById('pixel-music-page');
-    const pixelDrawing = document.getElementById('pixel-drawing-page');
-    if (appLanding) appLanding.classList.remove('active');
-    if (landing) landing.classList.add('hidden');
-    if (predictor) predictor.classList.remove('active');
-    if (calc) calc.classList.remove('active');
-    if (pixelArt) pixelArt.classList.remove('active');
-    if (settings) settings.classList.add('active');
-    if (funcPage) funcPage.classList.remove('active');
-    if (learningLanding) learningLanding.classList.add('hidden');
-    if (pixelMusic) pixelMusic.classList.remove('active');
-    if (pixelDrawing) pixelDrawing.classList.remove('active');
+    showPage('settings-page');
     if (window.PixelMusic && typeof window.PixelMusic.cleanup === 'function') {
       window.PixelMusic.cleanup();
     }
@@ -2362,69 +2343,83 @@
   // Part 7.6: 页面切换 / Page Switching
   // ============================================================
 
+  // 所有页面 ID 清单（统一管理，避免遗漏）
+  var PAGE_IDS = [
+    'app-landing-page',     // 工具首页
+    'landing-page',         // 像素数学首页
+    'learning-landing-page',// 学习系统首页
+    'predictor-page',       // 预测系统
+    'calculator-page',      // 计算机系统
+    'function-page',        // 函数系统
+    'pixel-art-page',       // 像素艺术生成器
+    'pixel-drawing-page',   // 像素绘图编辑器
+    'pixel-music-page',     // 像素音乐合成器
+    'arithmetic-page',      // 四则运算学习卡片
+    'mixed-arithmetic-page',// 混合运算学习卡片
+    'settings-page'         // 设置页
+  ];
+
+  // 用 active 类显示的页面
+  var ACTIVE_PAGES = {
+    'app-landing-page': true,
+    'predictor-page': true,
+    'calculator-page': true,
+    'function-page': true,
+    'pixel-art-page': true,
+    'pixel-drawing-page': true,
+    'pixel-music-page': true,
+    'settings-page': true
+  };
+
+  // 用 hidden 类隐藏的页面（landing-page, learning-landing-page, arithmetic-page, mixed-arithmetic-page）
+  var HIDDEN_PAGES = {
+    'landing-page': true,
+    'learning-landing-page': true,
+    'arithmetic-page': true,
+    'mixed-arithmetic-page': true
+  };
+
+  // 统一隐藏所有页面（清除 active 和 hidden 类的状态）
+  function hideAllPages() {
+    for (var i = 0; i < PAGE_IDS.length; i++) {
+      var id = PAGE_IDS[i];
+      var el = document.getElementById(id);
+      if (!el) continue;
+      if (ACTIVE_PAGES[id]) {
+        el.classList.remove('active');
+      }
+      if (HIDDEN_PAGES[id]) {
+        el.classList.add('hidden');
+      }
+    }
+  }
+
+  // 显示指定页面（先隐藏全部，再显示目标）
+  function showPage(pageId) {
+    hideAllPages();
+    var el = document.getElementById(pageId);
+    if (!el) return;
+    if (ACTIVE_PAGES[pageId]) {
+      el.classList.add('active');
+    } else if (HIDDEN_PAGES[pageId]) {
+      el.classList.remove('hidden');
+    }
+  }
+
   function showLanding() {
-    const appLanding = document.getElementById('app-landing-page');
-    const landing = document.getElementById('landing-page');
-    const predictor = document.getElementById('predictor-page');
-    const calc = document.getElementById('calculator-page');
-    const pixelArt = document.getElementById('pixel-art-page');
-    const settings = document.getElementById('settings-page');
-    const funcPage = document.getElementById('function-page');
-    const learningLanding = document.getElementById('learning-landing-page');
-    if (appLanding) appLanding.classList.remove('active');
-    if (landing) landing.classList.remove('hidden');
-    if (predictor) predictor.classList.remove('active');
-    if (calc) calc.classList.remove('active');
-    if (pixelArt) pixelArt.classList.remove('active');
-    if (settings) settings.classList.remove('active');
-    if (funcPage) funcPage.classList.remove('active');
-    if (learningLanding) learningLanding.classList.add('hidden');
+    showPage('landing-page');
   }
 
   function showAppLanding() {
-    const appLanding = document.getElementById('app-landing-page');
-    const landing = document.getElementById('landing-page');
-    const predictor = document.getElementById('predictor-page');
-    const calc = document.getElementById('calculator-page');
-    const pixelArt = document.getElementById('pixel-art-page');
-    const settings = document.getElementById('settings-page');
-    const funcPage = document.getElementById('function-page');
-    const learningLanding = document.getElementById('learning-landing-page');
-    const pixelMusic = document.getElementById('pixel-music-page');
-    const pixelDrawing = document.getElementById('pixel-drawing-page');
-    if (appLanding) appLanding.classList.add('active');
-    if (landing) landing.classList.add('hidden');
-    if (predictor) predictor.classList.remove('active');
-    if (calc) calc.classList.remove('active');
-    if (pixelArt) pixelArt.classList.remove('active');
-    if (settings) settings.classList.remove('active');
-    if (funcPage) funcPage.classList.remove('active');
-    if (learningLanding) learningLanding.classList.add('hidden');
-    if (pixelMusic) pixelMusic.classList.remove('active');
-    if (pixelDrawing) pixelDrawing.classList.remove('active');
+    showPage('app-landing-page');
     if (window.PixelMusic && typeof window.PixelMusic.cleanup === 'function') {
       window.PixelMusic.cleanup();
     }
   }
 
   function showPredictor() {
-    const appLanding = document.getElementById('app-landing-page');
-    const landing = document.getElementById('landing-page');
-    const predictor = document.getElementById('predictor-page');
-    const calc = document.getElementById('calculator-page');
-    const pixelArt = document.getElementById('pixel-art-page');
-    const settings = document.getElementById('settings-page');
-    const funcPage = document.getElementById('function-page');
-    const learningLanding = document.getElementById('learning-landing-page');
-    if (appLanding) appLanding.classList.remove('active');
-    if (landing) landing.classList.add('hidden');
-    if (predictor) predictor.classList.add('active');
-    if (calc) calc.classList.remove('active');
-    if (pixelArt) pixelArt.classList.remove('active');
-    if (settings) settings.classList.remove('active');
-    if (funcPage) funcPage.classList.remove('active');
-    if (learningLanding) learningLanding.classList.add('hidden');
-    // 触发画布重绘
+    showPage('predictor-page');
+    // 触发画布重绘 / trigger canvas resize
     setTimeout(function () {
       if (typeof resizeCanvases === 'function') resizeCanvases();
       else window.dispatchEvent(new Event('resize'));
@@ -2432,41 +2427,11 @@
   }
 
   function showCalculator() {
-    const appLanding = document.getElementById('app-landing-page');
-    const landing = document.getElementById('landing-page');
-    const predictor = document.getElementById('predictor-page');
-    const calc = document.getElementById('calculator-page');
-    const pixelArt = document.getElementById('pixel-art-page');
-    const settings = document.getElementById('settings-page');
-    const funcPage = document.getElementById('function-page');
-    const learningLanding = document.getElementById('learning-landing-page');
-    if (appLanding) appLanding.classList.remove('active');
-    if (landing) landing.classList.add('hidden');
-    if (predictor) predictor.classList.remove('active');
-    if (calc) calc.classList.add('active');
-    if (pixelArt) pixelArt.classList.remove('active');
-    if (settings) settings.classList.remove('active');
-    if (funcPage) funcPage.classList.remove('active');
-    if (learningLanding) learningLanding.classList.add('hidden');
+    showPage('calculator-page');
   }
 
   function showFunction() {
-    const appLanding = document.getElementById('app-landing-page');
-    const landing = document.getElementById('landing-page');
-    const predictor = document.getElementById('predictor-page');
-    const calc = document.getElementById('calculator-page');
-    const pixelArt = document.getElementById('pixel-art-page');
-    const settings = document.getElementById('settings-page');
-    const funcPage = document.getElementById('function-page');
-    const learningLanding = document.getElementById('learning-landing-page');
-    if (appLanding) appLanding.classList.remove('active');
-    if (landing) landing.classList.add('hidden');
-    if (predictor) predictor.classList.remove('active');
-    if (calc) calc.classList.remove('active');
-    if (pixelArt) pixelArt.classList.remove('active');
-    if (settings) settings.classList.remove('active');
-    if (funcPage) funcPage.classList.add('active');
-    if (learningLanding) learningLanding.classList.add('hidden');
+    showPage('function-page');
     // 进入页面后重绘一次函数坐标系（尺寸就位后）
     setTimeout(function () {
       if (window.functionPlotterInstance) {
@@ -2477,26 +2442,7 @@
   }
 
   function showPixelArt() {
-    const appLanding = document.getElementById('app-landing-page');
-    const landing = document.getElementById('landing-page');
-    const predictor = document.getElementById('predictor-page');
-    const calc = document.getElementById('calculator-page');
-    const pixelArt = document.getElementById('pixel-art-page');
-    const settings = document.getElementById('settings-page');
-    const funcPage = document.getElementById('function-page');
-    const learningLanding = document.getElementById('learning-landing-page');
-    const pixelMusic = document.getElementById('pixel-music-page');
-    const pixelDrawing = document.getElementById('pixel-drawing-page');
-    if (appLanding) appLanding.classList.remove('active');
-    if (landing) landing.classList.add('hidden');
-    if (predictor) predictor.classList.remove('active');
-    if (calc) calc.classList.remove('active');
-    if (pixelArt) pixelArt.classList.add('active');
-    if (settings) settings.classList.remove('active');
-    if (funcPage) funcPage.classList.remove('active');
-    if (learningLanding) learningLanding.classList.add('hidden');
-    if (pixelMusic) pixelMusic.classList.remove('active');
-    if (pixelDrawing) pixelDrawing.classList.remove('active');
+    showPage('pixel-art-page');
     if (window.PixelMusic && typeof window.PixelMusic.cleanup === 'function') {
       window.PixelMusic.cleanup();
     }
@@ -2509,26 +2455,7 @@
   }
 
   function showPixelDrawing() {
-    const appLanding = document.getElementById('app-landing-page');
-    const landing = document.getElementById('landing-page');
-    const predictor = document.getElementById('predictor-page');
-    const calc = document.getElementById('calculator-page');
-    const pixelArt = document.getElementById('pixel-art-page');
-    const settings = document.getElementById('settings-page');
-    const funcPage = document.getElementById('function-page');
-    const learningLanding = document.getElementById('learning-landing-page');
-    const pixelMusic = document.getElementById('pixel-music-page');
-    const pixelDrawing = document.getElementById('pixel-drawing-page');
-    if (appLanding) appLanding.classList.remove('active');
-    if (landing) landing.classList.add('hidden');
-    if (predictor) predictor.classList.remove('active');
-    if (calc) calc.classList.remove('active');
-    if (pixelArt) pixelArt.classList.remove('active');
-    if (settings) settings.classList.remove('active');
-    if (funcPage) funcPage.classList.remove('active');
-    if (learningLanding) learningLanding.classList.add('hidden');
-    if (pixelMusic) pixelMusic.classList.remove('active');
-    if (pixelDrawing) pixelDrawing.classList.add('active');
+    showPage('pixel-drawing-page');
     if (window.PixelMusic && typeof window.PixelMusic.cleanup === 'function') {
       window.PixelMusic.cleanup();
     }
@@ -2540,24 +2467,7 @@
   }
 
   function showPixelMusic() {
-    const appLanding = document.getElementById('app-landing-page');
-    const landing = document.getElementById('landing-page');
-    const predictor = document.getElementById('predictor-page');
-    const calc = document.getElementById('calculator-page');
-    const pixelArt = document.getElementById('pixel-art-page');
-    const settings = document.getElementById('settings-page');
-    const funcPage = document.getElementById('function-page');
-    const learningLanding = document.getElementById('learning-landing-page');
-    const pixelMusic = document.getElementById('pixel-music-page');
-    if (appLanding) appLanding.classList.remove('active');
-    if (landing) landing.classList.add('hidden');
-    if (predictor) predictor.classList.remove('active');
-    if (calc) calc.classList.remove('active');
-    if (pixelArt) pixelArt.classList.remove('active');
-    if (settings) settings.classList.remove('active');
-    if (funcPage) funcPage.classList.remove('active');
-    if (learningLanding) learningLanding.classList.add('hidden');
-    if (pixelMusic) pixelMusic.classList.add('active');
+    showPage('pixel-music-page');
     setTimeout(function () {
       if (window.PixelMusic && typeof window.PixelMusic.init === 'function') {
         window.PixelMusic.init();
@@ -2566,85 +2476,18 @@
   }
 
   function showLearningLanding() {
-    const appLanding = document.getElementById('app-landing-page');
-    const landing = document.getElementById('landing-page');
-    const predictor = document.getElementById('predictor-page');
-    const calc = document.getElementById('calculator-page');
-    const pixelArt = document.getElementById('pixel-art-page');
-    const settings = document.getElementById('settings-page');
-    const funcPage = document.getElementById('function-page');
-    const learningLanding = document.getElementById('learning-landing-page');
-    const arithmeticPage = document.getElementById('arithmetic-page');
-    const mixedArithmeticPage = document.getElementById('mixed-arithmetic-page');
-    if (appLanding) appLanding.classList.remove('active');
-    if (landing) landing.classList.add('hidden');
-    if (predictor) predictor.classList.remove('active');
-    if (calc) calc.classList.remove('active');
-    if (pixelArt) pixelArt.classList.remove('active');
-    if (settings) settings.classList.remove('active');
-    if (funcPage) funcPage.classList.remove('active');
-    if (learningLanding) learningLanding.classList.remove('hidden');
-    if (arithmeticPage) arithmeticPage.classList.add('hidden');
-    if (mixedArithmeticPage) mixedArithmeticPage.classList.add('hidden');
+    showPage('learning-landing-page');
   }
 
   function showArithmetic() {
-    const appLanding = document.getElementById('app-landing-page');
-    const landing = document.getElementById('landing-page');
-    const predictor = document.getElementById('predictor-page');
-    const calc = document.getElementById('calculator-page');
-    const pixelArt = document.getElementById('pixel-art-page');
-    const settings = document.getElementById('settings-page');
-    const funcPage = document.getElementById('function-page');
-    const learningLanding = document.getElementById('learning-landing-page');
-    const arithmeticPage = document.getElementById('arithmetic-page');
-    const mixedArithmeticPage = document.getElementById('mixed-arithmetic-page');
-    const pixelDrawing = document.getElementById('pixel-drawing-page');
-    const pixelMusic = document.getElementById('pixel-music-page');
-    if (appLanding) appLanding.classList.remove('active');
-    if (landing) landing.classList.add('hidden');
-    if (predictor) predictor.classList.remove('active');
-    if (calc) calc.classList.remove('active');
-    if (pixelArt) pixelArt.classList.remove('active');
-    if (settings) settings.classList.remove('active');
-    if (funcPage) funcPage.classList.remove('active');
-    if (learningLanding) learningLanding.classList.add('hidden');
-    if (pixelDrawing) pixelDrawing.classList.remove('active');
-    if (pixelMusic) pixelMusic.classList.remove('active');
-    if (arithmeticPage) arithmeticPage.classList.remove('hidden');
-    if (mixedArithmeticPage) mixedArithmeticPage.classList.add('hidden');
-
+    showPage('arithmetic-page');
     if (window.MathCards && typeof window.MathCards.init === 'function') {
       window.MathCards.init();
     }
   }
 
   function showMixedArithmetic() {
-    const appLanding = document.getElementById('app-landing-page');
-    const landing = document.getElementById('landing-page');
-    const predictor = document.getElementById('predictor-page');
-    const calc = document.getElementById('calculator-page');
-    const pixelArt = document.getElementById('pixel-art-page');
-    const settings = document.getElementById('settings-page');
-    const funcPage = document.getElementById('function-page');
-    const learningLanding = document.getElementById('learning-landing-page');
-    const arithmeticPage = document.getElementById('arithmetic-page');
-    const mixedArithmeticPage = document.getElementById('mixed-arithmetic-page');
-    const pixelDrawing = document.getElementById('pixel-drawing-page');
-    const pixelMusic = document.getElementById('pixel-music-page');
-    if (appLanding) appLanding.classList.remove('active');
-    if (landing) landing.classList.add('hidden');
-    if (predictor) predictor.classList.remove('active');
-    if (calc) calc.classList.remove('active');
-    if (pixelArt) pixelArt.classList.remove('active');
-    if (settings) settings.classList.remove('active');
-    if (funcPage) funcPage.classList.remove('active');
-    if (learningLanding) learningLanding.classList.add('hidden');
-    if (pixelDrawing) pixelDrawing.classList.remove('active');
-    if (pixelMusic) pixelMusic.classList.remove('active');
-    if (arithmeticPage) arithmeticPage.classList.add('hidden');
-    if (mixedArithmeticPage) mixedArithmeticPage.classList.remove('hidden');
-
+    showPage('mixed-arithmetic-page');
     if (window.MathCards && typeof window.MathCards.initMixed === 'function') {
       window.MathCards.initMixed();
     }

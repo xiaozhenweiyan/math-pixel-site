@@ -1004,6 +1004,13 @@
     window.addEventListener('resize', function () {
       resizeOscilloscope();
     });
+
+    // 语言切换时重建音序器 UI（更新音高选项等动态文字）
+    document.addEventListener('languagechange', function () {
+      if (!state.sequencer.isPlaying) {
+        buildSequencerUI();
+      }
+    });
   }
 
   window.PixelMusic = {

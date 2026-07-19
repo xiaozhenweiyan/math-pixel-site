@@ -29,6 +29,11 @@
 }
 
 /* ---------- Reset & Base ---------- */
+/* 通用 hidden 类：所有页面共用，确保彻底隐藏不占空间 */
+.hidden {
+  display: none !important;
+}
+
 *,
 *::before,
 *::after {
