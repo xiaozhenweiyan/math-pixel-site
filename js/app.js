@@ -94,9 +94,9 @@
       sessionStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
     } catch (e) {
       if (e && (e.name === 'QuotaExceededError' || e.code === 22)) {
-        showToast('图片过大，请用更小的图片');
+        showToast(i18n.t('toast_image_too_big'));
       } else {
-        showToast('存储失败：' + (e.message || '未知错误'));
+        showToast(i18n.t('toast_storage_failed', { msg: e.message || i18n.t('toast_unknown_error') }));
       }
     }
   }
@@ -132,22 +132,22 @@
 
     function confirmRegister() {
       let nickname = input ? (input.value || '').trim() : '';
-      if (!nickname) nickname = '访客';
+      if (!nickname) nickname = i18n.t('floating_avatar_title');
       if (nickname.length > 20) nickname = nickname.slice(0, 20);
       profile.nickname = nickname;
       saveProfile();
       hideRegisterModal();
       updateAppUserBar();
-      showToast('欢迎你，' + nickname + '！');
+      showToast(i18n.t('toast_welcome', { name: nickname }));
     }
 
     if (confirmBtn) confirmBtn.addEventListener('click', confirmRegister);
     if (skipBtn) skipBtn.addEventListener('click', function () {
-      profile.nickname = '访客';
+      profile.nickname = i18n.t('floating_avatar_title');
       saveProfile();
       hideRegisterModal();
       updateAppUserBar();
-      showToast('已使用默认昵称"访客"');
+      showToast(i18n.t('toast_default_nickname'));
     });
     if (input) input.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') {
@@ -164,7 +164,7 @@
     const avatarEl = document.getElementById('floating-avatar');
     if (!avatarEl) return;
     // 标题 tooltip 显示昵称
-    avatarEl.title = profile.nickname || '访客';
+    avatarEl.title = profile.nickname || i18n.t('guest');
     if (profile.avatar) {
       avatarEl.style.backgroundImage = 'url(' + profile.avatar + ')';
       avatarEl.textContent = '';
@@ -202,6 +202,9 @@
     const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
     const funcPage = document.getElementById('function-page');
+    const learningLanding = document.getElementById('learning-landing-page');
+    const pixelMusic = document.getElementById('pixel-music-page');
+    const pixelDrawing = document.getElementById('pixel-drawing-page');
     if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.remove('active');
@@ -209,6 +212,12 @@
     if (pixelArt) pixelArt.classList.remove('active');
     if (settings) settings.classList.add('active');
     if (funcPage) funcPage.classList.remove('active');
+    if (learningLanding) learningLanding.classList.add('hidden');
+    if (pixelMusic) pixelMusic.classList.remove('active');
+    if (pixelDrawing) pixelDrawing.classList.remove('active');
+    if (window.PixelMusic && typeof window.PixelMusic.cleanup === 'function') {
+      window.PixelMusic.cleanup();
+    }
     // 把当前 profile 状态填入设置页表单
     const nicknameInput = document.getElementById('settings-nickname');
     if (nicknameInput) nicknameInput.value = profile.nickname;
@@ -237,18 +246,18 @@
     const ext = (file.name.split('.').pop() || '').toLowerCase();
     const validExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
     if (allowedTypes.indexOf(file.type) < 0 && validExts.indexOf(ext) < 0) {
-      onError('不支持的格式，请使用 jpg/png/gif/webp/svg');
+      onError(i18n.t('toast_unsupported_format'));
       return;
     }
     // 校验大小
     if (file.size > maxSize) {
       const maxKB = Math.round(maxSize / 1024);
-      onError('文件过大（>' + maxKB + 'KB），请压缩后上传');
+      onError(i18n.t('toast_file_too_big', { size: maxKB }));
       return;
     }
     const reader = new FileReader();
     reader.onload = function (e) { onSuccess(e.target.result); };
-    reader.onerror = function () { onError('文件读取失败'); };
+    reader.onerror = function () { onError(i18n.t('toast_file_read_error')); };
     reader.readAsDataURL(file);
   }
 
@@ -339,11 +348,11 @@
    */
   function compressImage(file, maxDim, isAvatar) {
     return new Promise(function (resolve, reject) {
-      if (!file) { reject(new Error('无文件')); return; }
+      if (!file) { reject(new Error('no file')); return; }
 
       // 安全：硬性上限，防大文件解析导致内存爆炸
       if (file.size > 10 * 1024 * 1024) {
-        reject(new Error('文件过大（>10MB），请压缩后上传'));
+        reject(new Error(i18n.t('toast_file_10mb')));
         return;
       }
 
@@ -351,7 +360,7 @@
       if (file.size <= 500 * 1024) {
         const reader = new FileReader();
         reader.onload = function (e) { resolve(e.target.result); };
-        reader.onerror = function () { reject(new Error('文件读取失败')); };
+        reader.onerror = function () { reject(new Error(i18n.t('toast_file_read_error'))); };
         reader.readAsDataURL(file);
         return;
       }
@@ -367,15 +376,15 @@
             const MAX_TOTAL_PIXELS = 4096 * 4096;
             if (!Number.isFinite(img.width) || !Number.isFinite(img.height) ||
                 img.width <= 0 || img.height <= 0) {
-              reject(new Error('图片尺寸无效'));
+              reject(new Error(i18n.t('toast_invalid_size')));
               return;
             }
             if (img.width > MAX_PIXELS_PER_SIDE || img.height > MAX_PIXELS_PER_SIDE) {
-              reject(new Error('图片像素尺寸过大（单边 > ' + MAX_PIXELS_PER_SIDE + 'px）'));
+              reject(new Error(i18n.t('toast_pixel_too_big', { size: MAX_PIXELS_PER_SIDE })));
               return;
             }
             if (img.width * img.height > MAX_TOTAL_PIXELS) {
-              reject(new Error('图片总像素过大（> ' + MAX_TOTAL_PIXELS + ' 像素）'));
+              reject(new Error(i18n.t('toast_total_pixel_too_big', { size: MAX_TOTAL_PIXELS })));
               return;
             }
 
@@ -410,13 +419,13 @@
             const base64 = canvas.toDataURL('image/jpeg', isAvatar ? 0.85 : 0.8);
             resolve(base64);
           } catch (err) {
-            reject(new Error('图片处理失败：' + err.message));
+            reject(new Error(i18n.t('toast_image_process_error', { msg: err.message })));
           }
         };
-        img.onerror = function () { reject(new Error('图片加载失败')); };
+        img.onerror = function () { reject(new Error(i18n.t('toast_image_load_error'))); };
         img.src = e.target.result;
       };
-      reader.onerror = function () { reject(new Error('文件读取失败')); };
+      reader.onerror = function () { reject(new Error(i18n.t('toast_file_read_error'))); };
       reader.readAsDataURL(file);
     });
   }
@@ -428,13 +437,13 @@
     if (saveNicknameBtn && nicknameInput) {
       saveNicknameBtn.addEventListener('click', function () {
         let nickname = (nicknameInput.value || '').trim();
-        if (!nickname) nickname = '访客';
+        if (!nickname) nickname = i18n.t('floating_avatar_title');
         if (nickname.length > 20) nickname = nickname.slice(0, 20);
         profile.nickname = nickname;
         saveProfile();
         updateAppUserBar();
         updateSettingsAvatarPreview();
-        showToast('昵称已更新：' + nickname);
+        showToast(i18n.t('toast_nickname_updated', { name: nickname }));
       });
     }
 
@@ -450,7 +459,7 @@
         const validExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
         const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
         if (allowedTypes.indexOf(file.type) < 0 && validExts.indexOf(ext) < 0) {
-          showToast('不支持的格式，请使用 jpg/png/gif/webp/svg');
+          showToast(i18n.t('toast_unsupported_format'));
           this.value = '';
           return;
         }
@@ -459,7 +468,7 @@
         if (file.type === 'image/svg+xml' || ext === 'svg') {
           // 安全：限制 SVG 文件大小，防 sessionStorage 配额耗尽与解析 DoS
           if (file.size > 200 * 1024) {
-            showToast('SVG 文件过大（>200KB），请精简后上传');
+            showToast(i18n.t('toast_svg_too_big'));
             this.value = '';
             return;
           }
@@ -468,17 +477,17 @@
             // 安全：SVG 可能携带 <script>/on* 等，消毒后再存储
             const cleaned = sanitizeSvgDataUrl(e.target.result);
             if (!cleaned) {
-              showToast('SVG 文件含不安全内容或格式错误，已拒绝');
+              showToast(i18n.t('toast_svg_unsafe'));
               return;
             }
             profile.avatar = cleaned;
             saveProfile();
             updateAppUserBar();
             updateSettingsAvatarPreview();
-            showToast('头像已更新');
+            showToast(i18n.t('toast_avatar_updated'));
           };
           reader.onerror = function () {
-            showToast('SVG 文件读取失败');
+            showToast(i18n.t('toast_file_read_error'));
           };
           reader.readAsDataURL(file);
           this.value = '';
@@ -487,14 +496,14 @@
 
         // 安全：限制上传文件大小（防 DoS）
         if (file.size > 10 * 1024 * 1024) {
-          showToast('文件过大（>10MB），请压缩后上传');
+          showToast(i18n.t('toast_file_10mb'));
           this.value = '';
           return;
         }
 
         // 大文件显示压缩提示
         if (file.size > 500 * 1024) {
-          showToast('正在压缩图片...');
+          showToast(i18n.t('toast_compressing'));
         }
 
         compressImage(file, 256, true).then(function (base64) {
@@ -502,9 +511,9 @@
           saveProfile();
           updateAppUserBar();
           updateSettingsAvatarPreview();
-          showToast('头像已更新');
+          showToast(i18n.t('toast_avatar_updated'));
         }).catch(function (err) {
-          showToast(err.message || '头像处理失败');
+          showToast(err.message || i18n.t('toast_image_process_error', { msg: '' }));
         });
         this.value = '';
       });
@@ -518,7 +527,7 @@
         saveProfile();
         updateAppUserBar();
         updateSettingsAvatarPreview();
-        showToast('头像已清除');
+        showToast(i18n.t('toast_avatar_cleared'));
       });
     }
 
@@ -533,7 +542,7 @@
         const validExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
         const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
         if (allowedTypes.indexOf(file.type) < 0 && validExts.indexOf(ext) < 0) {
-          showToast('不支持的格式，请使用 jpg/png/gif/webp/svg');
+          showToast(i18n.t('toast_unsupported_format'));
           this.value = '';
           return;
         }
@@ -542,7 +551,7 @@
         if (file.type === 'image/svg+xml' || ext === 'svg') {
           // 安全：限制 SVG 文件大小，防 sessionStorage 配额耗尽与解析 DoS
           if (file.size > 200 * 1024) {
-            showToast('SVG 文件过大（>200KB），请精简后上传');
+            showToast(i18n.t('toast_svg_too_big'));
             this.value = '';
             return;
           }
@@ -551,17 +560,17 @@
             // 安全：SVG 可能携带 <script>/on* 等，消毒后再存储
             const cleaned = sanitizeSvgDataUrl(e.target.result);
             if (!cleaned) {
-              showToast('SVG 文件含不安全内容或格式错误，已拒绝');
+              showToast(i18n.t('toast_svg_unsafe'));
               return;
             }
             profile.bgType = 'image';
             profile.bgValue = cleaned;
             saveProfile();
             applyBackground();
-            showToast('背景图片已应用');
+            showToast(i18n.t('toast_bg_image_applied'));
           };
           reader.onerror = function () {
-            showToast('SVG 文件读取失败');
+            showToast(i18n.t('toast_file_read_error'));
           };
           reader.readAsDataURL(file);
           this.value = '';
@@ -570,13 +579,13 @@
 
         // 安全：限制上传文件大小（防 DoS）
         if (file.size > 10 * 1024 * 1024) {
-          showToast('文件过大（>10MB），请压缩后上传');
+          showToast(i18n.t('toast_file_10mb'));
           this.value = '';
           return;
         }
 
         if (file.size > 500 * 1024) {
-          showToast('正在压缩图片...');
+          showToast(i18n.t('toast_compressing'));
         }
 
         compressImage(file, 1920, false).then(function (base64) {
@@ -584,9 +593,9 @@
           profile.bgValue = base64;
           saveProfile();
           applyBackground();
-          showToast('背景图片已应用');
+          showToast(i18n.t('toast_bg_image_applied'));
         }).catch(function (err) {
-          showToast(err.message || '背景处理失败');
+          showToast(err.message || i18n.t('toast_image_process_error', { msg: '' }));
         });
         this.value = '';
       });
@@ -602,7 +611,7 @@
         profile.bgValue = color;
         saveProfile();
         applyBackground();
-        showToast('背景颜色已应用：' + color);
+        showToast(i18n.t('toast_bg_color_applied', { color: color }));
       });
     }
 
@@ -614,8 +623,23 @@
         profile.bgValue = '';
         saveProfile();
         applyBackground();
-        showToast('已恢复默认背景');
+        showToast(i18n.t('toast_bg_reset'));
       });
+    }
+
+    // 语言切换
+    const langSelect = document.getElementById('settings-language');
+    if (langSelect) {
+      langSelect.value = i18n.getCurrentMode ? i18n.getCurrentMode() : 'auto';
+      langSelect.addEventListener('change', function () {
+        const mode = this.value;
+        i18n.setLanguage(mode);
+      });
+    }
+
+    // Wasm 加速开关
+    if (window.PixelArt && window.PixelArt.initWasmToggle) {
+      window.PixelArt.initWasmToggle();
     }
 
     // 退出登录（从设置页退出，清除临时账号）/ logout from settings
@@ -627,7 +651,7 @@
         updateFloatingAvatar();
         showAppLanding();
         showRegisterModal();
-        showToast('已退出，数据已清除');
+        showToast(i18n.t('toast_logged_out'));
       });
     }
   }
@@ -705,7 +729,7 @@
    */
   function validateInput(values) {
     if (!Array.isArray(values) || values.length < 2) {
-      showToast('至少需要 2 个数字');
+      showToast(i18n.t('toast_min_numbers'));
       return false;
     }
     return true;
@@ -751,7 +775,7 @@
   function updatePredictButtonText() {
     const btn = document.getElementById('btn-predict');
     if (!btn) return;
-    btn.textContent = longtermMode ? '预测+训练' : '预测';
+    btn.textContent = longtermMode ? i18n.t('btn_predict_train') : i18n.t('btn_predict');
   }
 
   /**
@@ -766,9 +790,9 @@
       saveLongtermState();
       updatePredictButtonText();
       if (longtermMode) {
-        showToast('长期训练模式已开启，每次预测将累积序列并增量训练神经网络');
+        showToast(i18n.t('toast_longterm_on'));
       } else {
-        showToast('长期训练模式已关闭');
+        showToast(i18n.t('toast_longterm_off'));
       }
     });
   }
@@ -911,7 +935,7 @@
     const btn = document.getElementById('btn-predict');
     if (btn) {
       btn.disabled = !enabled;
-      btn.textContent = enabled ? (longtermMode ? '预测+训练' : '预测') : '训练中...';
+      btn.textContent = enabled ? (longtermMode ? i18n.t('btn_predict_train') : i18n.t('btn_predict')) : i18n.t('training_label');
     }
     const radios = document.querySelectorAll('input[name="weight-mode"]');
     for (let i = 0; i < radios.length; i++) {
@@ -931,7 +955,7 @@
     const text = textarea.value || '';
     const parsed = parseSequence(text);
     if (parsed.ignored > 0) {
-      showToast('已忽略 ' + parsed.ignored + ' 个非法值');
+      showToast(i18n.t('toast_ignored', { n: parsed.ignored }));
     }
     if (!validateInput(parsed.values)) {
       // 长期模式下，如果当前输入不足但累积序列足够，仍可继续
@@ -947,7 +971,7 @@
       }
       textarea.value = '';
       saveLongtermState();
-      showToast('累积序列长度：' + longtermSeries.length);
+      showToast(i18n.t('toast_series_length', { n: longtermSeries.length }));
       runTrainingAnimation(longtermSeries.slice());
     } else {
       runTrainingAnimation(parsed.values);
@@ -1007,7 +1031,7 @@
         const stepData = steps[i];
         setTrainingProgress(
           i + 1, totalSteps,
-          '训练中 step ' + (i + 1) + ' / ' + totalSteps
+          i18n.t('training_step', { current: i + 1, total: totalSteps })
         );
 
         // 构建 animateLineChartStep 需要的 methodPredictions / build methodPreds
@@ -1057,7 +1081,7 @@
 
     // 6. 训练完成，执行最终预测 / training complete, final prediction
     if (!trainingInProgress) return;  // 被取消 / cancelled
-    setTrainingProgress(totalSteps, totalSteps, '训练完成，执行最终预测...');
+    setTrainingProgress(totalSteps, totalSteps, i18n.t('training_complete'));
     await sleep(300);
     if (!trainingInProgress) return;  // 被取消 / cancelled
 
@@ -1120,7 +1144,7 @@
       ? neuralNet.incrementalTrain
       : (typeof neuralNet !== 'undefined' ? neuralNet.progressiveTrain : null);
     if (nnCanvas && trainFn) {
-      setTrainingProgress(1, 2, '神经网络渐进训练中...');
+      setTrainingProgress(1, 2, i18n.t('nn_training'));
       try {
         nnPreds = await trainFn(nnCanvas, series, predSteps, function (cur, total, stage) {
           setTrainingProgress(cur, total, stage);
@@ -1137,7 +1161,7 @@
     setTrainingProgress(0, 0, '');  // 隐藏进度条 / hides progress
     setPredictButtonEnabled(true);
     trainingInProgress = false;
-    showToast('预测完成');
+    showToast(i18n.t('toast_prediction_done'));
   }
 
   /**
@@ -1177,7 +1201,7 @@
     if (!el) return;
     const preds = state.ensemblePredictions;
     if (!preds || preds.length === 0) {
-      el.textContent = '— 等待输入 —';
+      el.textContent = i18n.t('waiting_input');
       return;
     }
     // 列表格式：[v1, v2, v3] / list format
@@ -1194,7 +1218,7 @@
     if (!el) return;
     const preds = state.nnPredictions;
     if (!preds || preds.length === 0) {
-      el.textContent = '— 等待输入 —';
+      el.textContent = i18n.t('waiting_input');
       return;
     }
     // 列表格式：[v1, v2, v3] / list format
@@ -1221,9 +1245,9 @@
     }
     panel.style.display = 'block';
     if (formulaEl) formulaEl.textContent = fc.formula || 'f(x) = —';
-    if (domainEl) domainEl.textContent = '定义域: ' + (fc.domain || '—');
-    if (rangeEl) rangeEl.textContent = '值域: ' + (fc.range || '—');
-    if (r2El) r2El.textContent = 'R²: ' + (fc.rSquared !== undefined ? fc.rSquared.toFixed(4) : '—');
+    if (domainEl) domainEl.textContent = i18n.t('fit_domain') + (fc.domain || '—');
+    if (rangeEl) rangeEl.textContent = i18n.t('fit_range') + (fc.range || '—');
+    if (r2El) r2El.textContent = i18n.t('fit_r2') + (fc.rSquared !== undefined ? fc.rSquared.toFixed(4) : '—');
   }
 
   /**
@@ -1319,22 +1343,22 @@
 
     const best = os.best;
     if (formulaEl) formulaEl.textContent = best.formula || 'f(x) = —';
-    if (typeEl) typeEl.textContent = '类型: ' + (best.functionName || '—');
+    if (typeEl) typeEl.textContent = i18n.t('offset_type') + (best.functionName || '—');
     if (r2El) {
       const r2 = best.rSquared;
-      r2El.textContent = 'R²: ' + (typeof r2 === 'number' && isFinite(r2) ? r2.toFixed(4) : '—');
+      r2El.textContent = i18n.t('fit_r2') + (typeof r2 === 'number' && isFinite(r2) ? r2.toFixed(4) : '—');
     }
     if (exactEl) {
       if (os.isExactMatch) {
-        exactEl.textContent = '✓ 精确匹配';
+        exactEl.textContent = i18n.t('offset_exact_match');
         exactEl.className = 'exact-match';
       } else {
-        exactEl.textContent = '最接近';
+        exactEl.textContent = i18n.t('offset_closest');
         exactEl.className = 'closest-match';
       }
     }
     if (resultEl) {
-      resultEl.textContent = '预测: ' + formatNumber(best.prediction);
+      resultEl.textContent = i18n.t('offset_prediction') + formatNumber(best.prediction);
     }
   }
 
@@ -1351,7 +1375,7 @@
     }
     if (state.stats.length === 0) {
       const empty = document.createElement('div');
-      empty.textContent = '— 等待预测 —';
+      empty.textContent = i18n.t('waiting_predict');
       el.appendChild(empty);
       return;
     }
@@ -1381,9 +1405,9 @@
       if (m.prediction === null || m.prediction === undefined) {
         const minLen = m.minLen;
         if (minLen !== undefined && minLen !== null && state.series.length < minLen) {
-          val.textContent = '还差 ' + (minLen - state.series.length) + ' 个';
+          val.textContent = i18n.t('method_need_more', { n: minLen - state.series.length });
         } else {
-          val.textContent = '预测失败';
+          val.textContent = i18n.t('method_failed');
         }
       } else {
         val.textContent = formatNumber(m.prediction);
@@ -1511,10 +1535,10 @@
     state.offsetResult = null;
 
     const ensembleEl = document.getElementById('ensemble-result');
-    if (ensembleEl) ensembleEl.textContent = '— 等待输入 —';
+    if (ensembleEl) ensembleEl.textContent = i18n.t('waiting_input');
 
     const nnResultEl = document.getElementById('nn-result');
-    if (nnResultEl) nnResultEl.textContent = '— 等待输入 —';
+    if (nnResultEl) nnResultEl.textContent = i18n.t('waiting_input');
 
     const funcFitPanel = document.getElementById('function-fit-panel');
     if (funcFitPanel) funcFitPanel.style.display = 'none';
@@ -1529,7 +1553,7 @@
     if (listEl) {
       while (listEl.firstChild) listEl.removeChild(listEl.firstChild);
       const empty = document.createElement('div');
-      empty.textContent = '— 等待预测 —';
+      empty.textContent = i18n.t('waiting_predict');
       listEl.appendChild(empty);
     }
 
@@ -1543,7 +1567,7 @@
       saveLongtermState();
     }
 
-    showToast('已重置');
+    showToast(i18n.t('toast_reset'));
   }
 
   // ============================================================
@@ -1605,7 +1629,7 @@
    */
   function exportJSON() {
     if (state.series.length === 0) {
-      showToast('请先输入并预测');
+      showToast(i18n.t('toast_export_first'));
       return;
     }
     const obj = {
@@ -1653,7 +1677,7 @@
     const json = JSON.stringify(obj, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     downloadBlob(blob, 'prediction_' + getTimestamp() + '.json');
-    showToast('已导出 JSON');
+    showToast(i18n.t('toast_export_json'));
   }
 
   /**
@@ -1664,7 +1688,7 @@
    */
   function exportCSV() {
     if (state.series.length === 0) {
-      showToast('请先输入并预测');
+      showToast(i18n.t('toast_export_first'));
       return;
     }
     const rows = [];
@@ -1694,7 +1718,7 @@
     const csv = rows.join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     downloadBlob(blob, 'prediction_' + getTimestamp() + '.csv');
-    showToast('已导出 CSV');
+    showToast(i18n.t('toast_export_csv'));
   }
 
   // ============================================================
@@ -1807,60 +1831,114 @@
   }
 
   /**
+   * evalAstWithTrig(node, angleMode) → number
+   * 基于 ExpressionParser.evalAst 的自定义求值器：
+   *   - 包装 sin/cos/tan 以支持角度模式和特殊角度精确值
+   *   - 不使用 eval 或 new Function
+   */
+  function evalAstWithTrig(node, angleMode) {
+    const EP = window.ExpressionParser;
+    if (node === null || node === undefined) {
+      throw new Error(i18n.t('calc_syntax_error'));
+    }
+
+    switch (node.type) {
+      case 'Number':
+        return node.value;
+
+      case 'Variable':
+        throw new Error(i18n.t('calc_no_variable'));
+
+      case 'Constant':
+        if (EP.CONSTANTS.hasOwnProperty(node.name)) {
+          return EP.CONSTANTS[node.name];
+        }
+        throw new Error(i18n.t('calc_unknown_const', { name: node.name }));
+
+      case 'UnaryOp': {
+        const val = evalAstWithTrig(node.operand, angleMode);
+        if (node.op === '-') return -val;
+        if (node.op === '+') return val;
+        throw new Error(i18n.t('calc_unknown_op', { op: node.op }));
+      }
+
+      case 'BinaryOp': {
+        const left = evalAstWithTrig(node.left, angleMode);
+        const right = evalAstWithTrig(node.right, angleMode);
+        switch (node.op) {
+          case '+': return left + right;
+          case '-': return left - right;
+          case '*': return left * right;
+          case '/':
+            if (right === 0) throw new Error(i18n.t('calc_div_zero'));
+            return left / right;
+          case '^':
+            return Math.pow(left, right);
+          default:
+            throw new Error(i18n.t('calc_unknown_op', { op: node.op }));
+        }
+      }
+
+      case 'FunctionCall': {
+        const arg = evalAstWithTrig(node.argument, angleMode);
+        const funcName = node.name;
+        // 三角函数使用自定义包装（支持角度模式和精确值）
+        if (funcName === 'sin' || funcName === 'cos' || funcName === 'tan') {
+          return trigEval(funcName, arg, angleMode);
+        }
+        // 其他函数使用标准实现
+        const fn = EP.FUNCTIONS[funcName];
+        if (!fn) {
+          throw new Error(i18n.t('calc_unknown_func', { name: funcName }));
+        }
+        return fn(arg);
+      }
+
+      default:
+        throw new Error(i18n.t('calc_unknown_node', { type: node.type }));
+    }
+  }
+
+  /**
    * calculateExpr(expr) → { ok: boolean, value?: number, error?: string }
-   * 安全表达式求值：
-   *   1. 字符白名单：数字、+ - * / ( ) . 空格、sqrt/sin/cos/tan 函数名
-   *   2. 替换 × ÷ − 为 * / -
-   *   3. 用 Function 构造器求值（不用 eval）
-   *   4. 三角函数经 trigEval 包装（含特殊角度查表 + 浮点吸附）
-   *   5. 结果校验必须是数字（允许 Infinity / -Infinity，如 tan(90°)）
+   * 安全表达式求值（Token 解析 + AST 评估，不使用 eval/new Function）：
+   *   1. 替换 × ÷ − 为 * / -
+   *   2. 使用 ExpressionParser 进行 token 解析和 AST 构建
+   *   3. 用 evalAstWithTrig 求值（三角函数支持角度模式 + 特殊角度精确值）
+   *   4. 结果校验必须是数字（允许 Infinity / -Infinity，如 tan(90°)）
    */
   function calculateExpr(expr) {
     if (typeof expr !== 'string' || expr.trim() === '') {
-      return { ok: false, error: '空表达式' };
+      return { ok: false, error: i18n.t('calc_empty_expr') };
     }
-    // 替换显示符号为代码符号
+    // 替换显示符号为标准符号
     let cleaned = expr
       .replace(/×/g, '*')
       .replace(/÷/g, '/')
       .replace(/−/g, '-')
-      .replace(/\s+/g, '');
-    // 校验：移除已知函数名后，剩余应只含数字 / 运算符 / 括号 / 小数点
-    const checkStr = cleaned
-      .replace(/sqrt/g, '')
-      .replace(/sin/g, '')
-      .replace(/cos/g, '')
-      .replace(/tan/g, '');
-    if (!/^[-+*/().0-9]+$/.test(checkStr)) {
-      return { ok: false, error: '包含非法字符' };
+      .trim();
+
+    if (cleaned === '') {
+      return { ok: false, error: i18n.t('calc_empty_expr') };
     }
-    // 替换函数名为内部占位（sqrt 保留 Math.sqrt）
-    cleaned = cleaned
-      .replace(/sqrt\(/g, 'Math.sqrt(')
-      .replace(/sin\(/g, '__sin(')
-      .replace(/cos\(/g, '__cos(')
-      .replace(/tan\(/g, '__tan(');
-    // 不允许连续运算符结尾
-    if (/[+\-*/]$/.test(cleaned) && cleaned.length > 0) {
-      if (!/^-$/.test(cleaned)) {
-        return { ok: false, error: '表达式不完整' };
-      }
+
+    // 不允许以运算符结尾（除了单个负号）
+    if (/[+\-*/^]$/.test(cleaned) && cleaned.length > 1) {
+      return { ok: false, error: i18n.t('calc_incomplete') };
     }
+
     try {
-      // 三角函数包装（注入到 Function 作用域）/ inject trig wrappers
-      const __sin = function (x) { return trigEval('sin', x, calcAngleMode); };
-      const __cos = function (x) { return trigEval('cos', x, calcAngleMode); };
-      const __tan = function (x) { return trigEval('tan', x, calcAngleMode); };
-      // 使用 Function 构造器（比 eval 安全一些，但仍然要靠白名单防护）
-      const fn = new Function('__sin', '__cos', '__tan', 'return (' + cleaned + ');');
-      const result = fn(__sin, __cos, __tan);
-      if (typeof result !== 'number' || Number.isNaN(result)) {
-        return { ok: false, error: '结果无效' };
+      const parseResult = window.ExpressionParser.parse(cleaned);
+      if (!parseResult.ok) {
+        return { ok: false, error: i18n.t('calc_syntax_error') };
       }
-      // 允许 Infinity / -Infinity（如 tan(90°)）/ allow Infinity (e.g. tan(90°))
+      const result = evalAstWithTrig(parseResult.ast, calcAngleMode);
+      if (typeof result !== 'number' || Number.isNaN(result)) {
+        return { ok: false, error: i18n.t('calc_invalid_result') };
+      }
       return { ok: true, value: result };
     } catch (e) {
-      return { ok: false, error: '语法错误' };
+      return { ok: false, error: e.message || i18n.t('calc_syntax_error') };
     }
   }
 
@@ -1969,7 +2047,7 @@
       calcAngleMode = (calcAngleMode === 'RAD') ? 'DEG' : 'RAD';
       const btn = document.getElementById('calc-angle-mode');
       if (btn) btn.textContent = calcAngleMode;
-      showToast('角度模式：' + calcAngleMode);
+      showToast(i18n.t('calc_angle_mode', { mode: calcAngleMode }));
       return;
     }
     if (key === 'C') {
@@ -2012,7 +2090,7 @@
       if (sqrtMatch) {
         const inner = sqrtMatch[1];
         const evalRes = calculateExpr(inner);
-        if (!evalRes.ok) return { steps: steps, finalValue: null, error: '根号内表达式错误' };
+        if (!evalRes.ok) return { steps: steps, finalValue: null, error: i18n.t('calc_sqrt_error') };
         // 注意：要对 inner 求值结果应用 sqrt，不能用 inner 直接结果
         const sqrtVal = Math.sqrt(evalRes.value);
         const replacement = String(sqrtVal);
@@ -2027,7 +2105,7 @@
         const func = trigMatch[1];
         const inner = trigMatch[2];
         const evalRes = calculateExpr(inner);
-        if (!evalRes.ok) return { steps: steps, finalValue: null, error: func + ' 内表达式错误' };
+        if (!evalRes.ok) return { steps: steps, finalValue: null, error: i18n.t('calc_trig_error', { func: func }) };
         const trigVal = trigEval(func, evalRes.value, calcAngleMode);
         const replacement = String(trigVal);
         current = current.replace(trigMatch[0], replacement);
@@ -2040,7 +2118,7 @@
       if (parenMatch) {
         const inner = parenMatch[1];
         const evalRes = calculateExpr(inner);
-        if (!evalRes.ok) return { steps: steps, finalValue: null, error: '括号内表达式错误' };
+        if (!evalRes.ok) return { steps: steps, finalValue: null, error: i18n.t('calc_paren_error') };
         const replacement = String(evalRes.value);
         // 处理负数替换：如 (-3) 替换为 -3，但 (3)*(-3) 需保留括号
         // 简化：若结果是负数，在外面包括号
@@ -2105,7 +2183,7 @@
 
     // 最终求值
     const finalRes = calculateExpr(current);
-    if (!finalRes.ok) return { steps: steps, finalValue: null, error: '表达式错误' };
+    if (!finalRes.ok) return { steps: steps, finalValue: null, error: i18n.t('calc_syntax_error') };
 
     return { steps: steps, finalValue: finalRes.value, error: null };
   }
@@ -2122,7 +2200,7 @@
     if (error) {
       const errDiv = document.createElement('div');
       errDiv.className = 'calc-step-error calc-step-line';
-      errDiv.textContent = '错误：' + error;
+      errDiv.textContent = i18n.t('calc_error') + '：' + error;
       container.appendChild(errDiv);
       return;
     }
@@ -2179,7 +2257,7 @@
       // 错误时立即显示，不延迟
       const errDiv = document.createElement('div');
       errDiv.className = 'calc-step-error calc-step-line';
-      errDiv.textContent = '错误：' + error;
+      errDiv.textContent = i18n.t('calc_error') + '：' + error;
       container.appendChild(errDiv);
       return;
     }
@@ -2251,8 +2329,8 @@
       showCalcStepsAnimated(trace.steps, trace.finalValue, trace.error);
     } else {
       if (history) history.textContent = expr;
-      current.textContent = '错误：' + (result.error || '无效');
-      showCalcStepsAnimated([], null, result.error || '无效');
+      current.textContent = i18n.t('calc_error') + '：' + (result.error || i18n.t('calc_invalid_result'));
+      showCalcStepsAnimated([], null, result.error || i18n.t('calc_invalid_result'));
     }
   }
 
@@ -2292,6 +2370,7 @@
     const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
     const funcPage = document.getElementById('function-page');
+    const learningLanding = document.getElementById('learning-landing-page');
     if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.remove('hidden');
     if (predictor) predictor.classList.remove('active');
@@ -2299,6 +2378,7 @@
     if (pixelArt) pixelArt.classList.remove('active');
     if (settings) settings.classList.remove('active');
     if (funcPage) funcPage.classList.remove('active');
+    if (learningLanding) learningLanding.classList.add('hidden');
   }
 
   function showAppLanding() {
@@ -2309,6 +2389,9 @@
     const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
     const funcPage = document.getElementById('function-page');
+    const learningLanding = document.getElementById('learning-landing-page');
+    const pixelMusic = document.getElementById('pixel-music-page');
+    const pixelDrawing = document.getElementById('pixel-drawing-page');
     if (appLanding) appLanding.classList.add('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.remove('active');
@@ -2316,6 +2399,12 @@
     if (pixelArt) pixelArt.classList.remove('active');
     if (settings) settings.classList.remove('active');
     if (funcPage) funcPage.classList.remove('active');
+    if (learningLanding) learningLanding.classList.add('hidden');
+    if (pixelMusic) pixelMusic.classList.remove('active');
+    if (pixelDrawing) pixelDrawing.classList.remove('active');
+    if (window.PixelMusic && typeof window.PixelMusic.cleanup === 'function') {
+      window.PixelMusic.cleanup();
+    }
   }
 
   function showPredictor() {
@@ -2326,6 +2415,7 @@
     const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
     const funcPage = document.getElementById('function-page');
+    const learningLanding = document.getElementById('learning-landing-page');
     if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.add('active');
@@ -2333,6 +2423,7 @@
     if (pixelArt) pixelArt.classList.remove('active');
     if (settings) settings.classList.remove('active');
     if (funcPage) funcPage.classList.remove('active');
+    if (learningLanding) learningLanding.classList.add('hidden');
     // 触发画布重绘
     setTimeout(function () {
       if (typeof resizeCanvases === 'function') resizeCanvases();
@@ -2348,6 +2439,7 @@
     const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
     const funcPage = document.getElementById('function-page');
+    const learningLanding = document.getElementById('learning-landing-page');
     if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.remove('active');
@@ -2355,6 +2447,7 @@
     if (pixelArt) pixelArt.classList.remove('active');
     if (settings) settings.classList.remove('active');
     if (funcPage) funcPage.classList.remove('active');
+    if (learningLanding) learningLanding.classList.add('hidden');
   }
 
   function showFunction() {
@@ -2365,6 +2458,7 @@
     const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
     const funcPage = document.getElementById('function-page');
+    const learningLanding = document.getElementById('learning-landing-page');
     if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.remove('active');
@@ -2372,6 +2466,7 @@
     if (pixelArt) pixelArt.classList.remove('active');
     if (settings) settings.classList.remove('active');
     if (funcPage) funcPage.classList.add('active');
+    if (learningLanding) learningLanding.classList.add('hidden');
     // 进入页面后重绘一次函数坐标系（尺寸就位后）
     setTimeout(function () {
       if (window.functionPlotterInstance) {
@@ -2389,6 +2484,9 @@
     const pixelArt = document.getElementById('pixel-art-page');
     const settings = document.getElementById('settings-page');
     const funcPage = document.getElementById('function-page');
+    const learningLanding = document.getElementById('learning-landing-page');
+    const pixelMusic = document.getElementById('pixel-music-page');
+    const pixelDrawing = document.getElementById('pixel-drawing-page');
     if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.remove('active');
@@ -2396,12 +2494,160 @@
     if (pixelArt) pixelArt.classList.add('active');
     if (settings) settings.classList.remove('active');
     if (funcPage) funcPage.classList.remove('active');
+    if (learningLanding) learningLanding.classList.add('hidden');
+    if (pixelMusic) pixelMusic.classList.remove('active');
+    if (pixelDrawing) pixelDrawing.classList.remove('active');
+    if (window.PixelMusic && typeof window.PixelMusic.cleanup === 'function') {
+      window.PixelMusic.cleanup();
+    }
     // 进入页面后重新生成一次，确保画布初始化正确
     setTimeout(function () {
       if (window.PixelArt && typeof window.PixelArt.regenerate === 'function') {
         window.PixelArt.regenerate();
       }
     }, 50);
+  }
+
+  function showPixelDrawing() {
+    const appLanding = document.getElementById('app-landing-page');
+    const landing = document.getElementById('landing-page');
+    const predictor = document.getElementById('predictor-page');
+    const calc = document.getElementById('calculator-page');
+    const pixelArt = document.getElementById('pixel-art-page');
+    const settings = document.getElementById('settings-page');
+    const funcPage = document.getElementById('function-page');
+    const learningLanding = document.getElementById('learning-landing-page');
+    const pixelMusic = document.getElementById('pixel-music-page');
+    const pixelDrawing = document.getElementById('pixel-drawing-page');
+    if (appLanding) appLanding.classList.remove('active');
+    if (landing) landing.classList.add('hidden');
+    if (predictor) predictor.classList.remove('active');
+    if (calc) calc.classList.remove('active');
+    if (pixelArt) pixelArt.classList.remove('active');
+    if (settings) settings.classList.remove('active');
+    if (funcPage) funcPage.classList.remove('active');
+    if (learningLanding) learningLanding.classList.add('hidden');
+    if (pixelMusic) pixelMusic.classList.remove('active');
+    if (pixelDrawing) pixelDrawing.classList.add('active');
+    if (window.PixelMusic && typeof window.PixelMusic.cleanup === 'function') {
+      window.PixelMusic.cleanup();
+    }
+    setTimeout(function () {
+      if (window.PixelDrawingEditor && typeof window.PixelDrawingEditor.resize === 'function') {
+        window.PixelDrawingEditor.resize();
+      }
+    }, 50);
+  }
+
+  function showPixelMusic() {
+    const appLanding = document.getElementById('app-landing-page');
+    const landing = document.getElementById('landing-page');
+    const predictor = document.getElementById('predictor-page');
+    const calc = document.getElementById('calculator-page');
+    const pixelArt = document.getElementById('pixel-art-page');
+    const settings = document.getElementById('settings-page');
+    const funcPage = document.getElementById('function-page');
+    const learningLanding = document.getElementById('learning-landing-page');
+    const pixelMusic = document.getElementById('pixel-music-page');
+    if (appLanding) appLanding.classList.remove('active');
+    if (landing) landing.classList.add('hidden');
+    if (predictor) predictor.classList.remove('active');
+    if (calc) calc.classList.remove('active');
+    if (pixelArt) pixelArt.classList.remove('active');
+    if (settings) settings.classList.remove('active');
+    if (funcPage) funcPage.classList.remove('active');
+    if (learningLanding) learningLanding.classList.add('hidden');
+    if (pixelMusic) pixelMusic.classList.add('active');
+    setTimeout(function () {
+      if (window.PixelMusic && typeof window.PixelMusic.init === 'function') {
+        window.PixelMusic.init();
+      }
+    }, 50);
+  }
+
+  function showLearningLanding() {
+    const appLanding = document.getElementById('app-landing-page');
+    const landing = document.getElementById('landing-page');
+    const predictor = document.getElementById('predictor-page');
+    const calc = document.getElementById('calculator-page');
+    const pixelArt = document.getElementById('pixel-art-page');
+    const settings = document.getElementById('settings-page');
+    const funcPage = document.getElementById('function-page');
+    const learningLanding = document.getElementById('learning-landing-page');
+    const arithmeticPage = document.getElementById('arithmetic-page');
+    const mixedArithmeticPage = document.getElementById('mixed-arithmetic-page');
+    if (appLanding) appLanding.classList.remove('active');
+    if (landing) landing.classList.add('hidden');
+    if (predictor) predictor.classList.remove('active');
+    if (calc) calc.classList.remove('active');
+    if (pixelArt) pixelArt.classList.remove('active');
+    if (settings) settings.classList.remove('active');
+    if (funcPage) funcPage.classList.remove('active');
+    if (learningLanding) learningLanding.classList.remove('hidden');
+    if (arithmeticPage) arithmeticPage.classList.add('hidden');
+    if (mixedArithmeticPage) mixedArithmeticPage.classList.add('hidden');
+  }
+
+  function showArithmetic() {
+    const appLanding = document.getElementById('app-landing-page');
+    const landing = document.getElementById('landing-page');
+    const predictor = document.getElementById('predictor-page');
+    const calc = document.getElementById('calculator-page');
+    const pixelArt = document.getElementById('pixel-art-page');
+    const settings = document.getElementById('settings-page');
+    const funcPage = document.getElementById('function-page');
+    const learningLanding = document.getElementById('learning-landing-page');
+    const arithmeticPage = document.getElementById('arithmetic-page');
+    const mixedArithmeticPage = document.getElementById('mixed-arithmetic-page');
+    const pixelDrawing = document.getElementById('pixel-drawing-page');
+    const pixelMusic = document.getElementById('pixel-music-page');
+    if (appLanding) appLanding.classList.remove('active');
+    if (landing) landing.classList.add('hidden');
+    if (predictor) predictor.classList.remove('active');
+    if (calc) calc.classList.remove('active');
+    if (pixelArt) pixelArt.classList.remove('active');
+    if (settings) settings.classList.remove('active');
+    if (funcPage) funcPage.classList.remove('active');
+    if (learningLanding) learningLanding.classList.add('hidden');
+    if (pixelDrawing) pixelDrawing.classList.remove('active');
+    if (pixelMusic) pixelMusic.classList.remove('active');
+    if (arithmeticPage) arithmeticPage.classList.remove('hidden');
+    if (mixedArithmeticPage) mixedArithmeticPage.classList.add('hidden');
+
+    if (window.MathCards && typeof window.MathCards.init === 'function') {
+      window.MathCards.init();
+    }
+  }
+
+  function showMixedArithmetic() {
+    const appLanding = document.getElementById('app-landing-page');
+    const landing = document.getElementById('landing-page');
+    const predictor = document.getElementById('predictor-page');
+    const calc = document.getElementById('calculator-page');
+    const pixelArt = document.getElementById('pixel-art-page');
+    const settings = document.getElementById('settings-page');
+    const funcPage = document.getElementById('function-page');
+    const learningLanding = document.getElementById('learning-landing-page');
+    const arithmeticPage = document.getElementById('arithmetic-page');
+    const mixedArithmeticPage = document.getElementById('mixed-arithmetic-page');
+    const pixelDrawing = document.getElementById('pixel-drawing-page');
+    const pixelMusic = document.getElementById('pixel-music-page');
+    if (appLanding) appLanding.classList.remove('active');
+    if (landing) landing.classList.add('hidden');
+    if (predictor) predictor.classList.remove('active');
+    if (calc) calc.classList.remove('active');
+    if (pixelArt) pixelArt.classList.remove('active');
+    if (settings) settings.classList.remove('active');
+    if (funcPage) funcPage.classList.remove('active');
+    if (learningLanding) learningLanding.classList.add('hidden');
+    if (pixelDrawing) pixelDrawing.classList.remove('active');
+    if (pixelMusic) pixelMusic.classList.remove('active');
+    if (arithmeticPage) arithmeticPage.classList.add('hidden');
+    if (mixedArithmeticPage) mixedArithmeticPage.classList.remove('hidden');
+
+    if (window.MathCards && typeof window.MathCards.initMixed === 'function') {
+      window.MathCards.initMixed();
+    }
   }
 
   function initPageSwitching() {
@@ -2417,6 +2663,13 @@
     const btnBackToTools = document.getElementById('btn-back-to-tools');
     const btnEnterPixelArt = document.getElementById('btn-enter-pixel-art');
     const btnBackHomeArt = document.getElementById('btn-back-home-art');
+    const btnEnterPixelDrawEditor = document.getElementById('btn-enter-pixel-draw-editor');
+    const btnEnterPixelMusic = document.getElementById('btn-enter-pixel-music');
+    const btnBackHomeMusic = document.getElementById('btn-back-home-music');
+    const btnEnterLearning = document.getElementById('btn-enter-learning');
+    const btnBackToLanding = document.getElementById('btn-back-to-landing');
+    const btnEnterArithmetic = document.getElementById('btn-enter-arithmetic');
+    const btnEnterMixed = document.getElementById('btn-enter-mixed');
     if (btnPredictor) btnPredictor.addEventListener('click', showPredictor);
     if (btnCalc) btnCalc.addEventListener('click', showCalculator);
     if (btnFunction) btnFunction.addEventListener('click', showFunction);
@@ -2429,6 +2682,15 @@
     if (btnBackToTools) btnBackToTools.addEventListener('click', showAppLanding);
     if (btnEnterPixelArt) btnEnterPixelArt.addEventListener('click', showPixelArt);
     if (btnBackHomeArt) btnBackHomeArt.addEventListener('click', showAppLanding);
+    if (btnEnterPixelDrawEditor) btnEnterPixelDrawEditor.addEventListener('click', showPixelDrawing);
+    const btnBackHomeDrawing = document.getElementById('btn-back-home-drawing');
+    if (btnBackHomeDrawing) btnBackHomeDrawing.addEventListener('click', showAppLanding);
+    if (btnEnterPixelMusic) btnEnterPixelMusic.addEventListener('click', showPixelMusic);
+    if (btnBackHomeMusic) btnBackHomeMusic.addEventListener('click', showAppLanding);
+    if (btnEnterLearning) btnEnterLearning.addEventListener('click', showLearningLanding);
+    if (btnBackToLanding) btnBackToLanding.addEventListener('click', showLanding);
+    if (btnEnterArithmetic) btnEnterArithmetic.addEventListener('click', showArithmetic);
+    if (btnEnterMixed) btnEnterMixed.addEventListener('click', showMixedArithmetic);
   }
 
   /**
@@ -2446,6 +2708,390 @@
     const zoomIn = document.getElementById('btn-function-zoom-in');
     const zoomOut = document.getElementById('btn-function-zoom-out');
     const list = document.getElementById('function-list');
+    const paramPanel = document.getElementById('param-panel');
+    const paramSliders = document.getElementById('param-sliders');
+    const animBar = document.getElementById('param-animation-bar');
+    const playBtn = document.getElementById('param-animation-play-btn');
+    const speedSelect = document.getElementById('param-speed-select');
+
+    const params = {};
+    const paramConfig = {};
+    const PARAM_DEFAULT_MIN = -10;
+    const PARAM_DEFAULT_MAX = 10;
+    const PARAM_DEFAULT_STEP = 0.1;
+    const PARAM_DEFAULT_VALUE = 1;
+    const ANIM_PERIOD = 4000;
+
+    let animating = false;
+    let animSpeed = 1;
+    let animStartTime = 0;
+    let animPausedTime = 0;
+    let animRafId = null;
+
+    function formatParamValue(val) {
+      if (Number.isInteger(val)) return String(val);
+      return parseFloat(val.toFixed(4)).toString();
+    }
+
+    function ensureParamConfig(name) {
+      if (!paramConfig[name]) {
+        paramConfig[name] = {
+          min: PARAM_DEFAULT_MIN,
+          max: PARAM_DEFAULT_MAX,
+          step: PARAM_DEFAULT_STEP,
+          phase: Math.random() * Math.PI * 2
+        };
+      }
+      return paramConfig[name];
+    }
+
+    function createGearSvg() {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('width', '12');
+      svg.setAttribute('height', '12');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('fill', 'none');
+
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', '12');
+      circle.setAttribute('cy', '12');
+      circle.setAttribute('r', '3');
+      circle.setAttribute('stroke', '#ffffff');
+      circle.setAttribute('stroke-width', '2');
+      circle.setAttribute('fill', 'none');
+      svg.appendChild(circle);
+
+      const teeth = [
+        'M12 2 L12 5',
+        'M12 19 L12 22',
+        'M2 12 L5 12',
+        'M19 12 L22 12',
+        'M4.93 4.93 L7.05 7.05',
+        'M16.95 16.95 L19.07 19.07',
+        'M4.93 19.07 L7.05 16.95',
+        'M16.95 7.05 L19.07 4.93'
+      ];
+      for (let i = 0; i < teeth.length; i++) {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', teeth[i]);
+        path.setAttribute('stroke', '#ffffff');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('stroke-linecap', 'square');
+        svg.appendChild(path);
+      }
+
+      return svg;
+    }
+
+    function updatePlayButtonIcon() {
+      if (!playBtn) return;
+      while (playBtn.firstChild) playBtn.removeChild(playBtn.firstChild);
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('width', '14');
+      svg.setAttribute('height', '14');
+      svg.setAttribute('viewBox', '0 0 16 16');
+      svg.setAttribute('fill', 'none');
+      if (animating) {
+        const r1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        r1.setAttribute('x', '3');
+        r1.setAttribute('y', '2');
+        r1.setAttribute('width', '4');
+        r1.setAttribute('height', '12');
+        r1.setAttribute('fill', '#ffd700');
+        svg.appendChild(r1);
+        const r2 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        r2.setAttribute('x', '9');
+        r2.setAttribute('y', '2');
+        r2.setAttribute('width', '4');
+        r2.setAttribute('height', '12');
+        r2.setAttribute('fill', '#ffd700');
+        svg.appendChild(r2);
+      } else {
+        const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        poly.setAttribute('points', '4,2 14,8 4,14');
+        poly.setAttribute('fill', '#ffd700');
+        svg.appendChild(poly);
+      }
+      playBtn.appendChild(svg);
+      playBtn.title = animating ? '暂停动画' : '播放动画';
+    }
+
+    function animate(currentTime) {
+      if (!animating) return;
+
+      const elapsed = (currentTime - animStartTime) * animSpeed;
+      const fps = window.functionPlotterInstance;
+      if (!fps) return;
+
+      const allParams = fps.getAllParams();
+      let changed = false;
+
+      for (let i = 0; i < allParams.length; i++) {
+        const name = allParams[i];
+        const cfg = ensureParamConfig(name);
+        const t = (elapsed / ANIM_PERIOD) * Math.PI * 2 + cfg.phase;
+        const normalized = (Math.sin(t) + 1) / 2;
+        const val = cfg.min + (cfg.max - cfg.min) * normalized;
+        const stepped = Math.round(val / cfg.step) * cfg.step;
+        const clamped = Math.max(cfg.min, Math.min(cfg.max, stepped));
+
+        if (params[name] !== clamped) {
+          params[name] = clamped;
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        updateSliderDomValues();
+        fps.setParams(params);
+      }
+
+      animRafId = requestAnimationFrame(animate);
+    }
+
+    function updateSliderDomValues() {
+      if (!paramSliders) return;
+      const sliderInputs = paramSliders.querySelectorAll('input[type="range"]');
+      for (let i = 0; i < sliderInputs.length; i++) {
+        const slider = sliderInputs[i];
+        const name = slider.dataset.param;
+        if (name && params.hasOwnProperty(name)) {
+          const val = params[name];
+          slider.value = String(val);
+          const item = slider.closest('.param-slider-item');
+          if (item) {
+            const valueEl = item.querySelector('.param-slider-value');
+            if (valueEl) valueEl.textContent = formatParamValue(val);
+          }
+        }
+      }
+    }
+
+    function startAnimation() {
+      if (animating) return;
+      const fps = window.functionPlotterInstance;
+      if (!fps || fps.getAllParams().length === 0) return;
+
+      animating = true;
+      animStartTime = performance.now() - animPausedTime;
+      updatePlayButtonIcon();
+      animRafId = requestAnimationFrame(animate);
+    }
+
+    function stopAnimation() {
+      if (!animating) return;
+      animating = false;
+      animPausedTime = performance.now() - animStartTime;
+      if (animRafId !== null) {
+        cancelAnimationFrame(animRafId);
+        animRafId = null;
+      }
+      updatePlayButtonIcon();
+    }
+
+    function toggleAnimation() {
+      if (animating) {
+        stopAnimation();
+      } else {
+        startAnimation();
+      }
+    }
+
+    function renderParamSliders() {
+      if (!paramPanel || !paramSliders) return;
+      const fps = window.functionPlotterInstance;
+      if (!fps) return;
+
+      const allParams = fps.getAllParams();
+
+      if (allParams.length === 0) {
+        paramPanel.style.display = 'none';
+        if (animBar) animBar.style.display = 'none';
+        stopAnimation();
+        animPausedTime = 0;
+        return;
+      }
+
+      paramPanel.style.display = 'block';
+      if (animBar) animBar.style.display = 'flex';
+
+      while (paramSliders.firstChild) {
+        paramSliders.removeChild(paramSliders.firstChild);
+      }
+
+      for (let i = 0; i < allParams.length; i++) {
+        const name = allParams[i];
+        if (!params.hasOwnProperty(name)) {
+          params[name] = PARAM_DEFAULT_VALUE;
+        }
+        const cfg = ensureParamConfig(name);
+        const val = params[name];
+
+        const item = document.createElement('div');
+        item.className = 'param-slider-item';
+
+        const header = document.createElement('div');
+        header.className = 'param-slider-header';
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'param-slider-name';
+        nameEl.textContent = name;
+
+        const rightWrap = document.createElement('div');
+        rightWrap.style.display = 'flex';
+        rightWrap.style.alignItems = 'center';
+        rightWrap.style.gap = '8px';
+
+        const valueEl = document.createElement('span');
+        valueEl.className = 'param-slider-value';
+        valueEl.textContent = formatParamValue(val);
+
+        const settingsBtn = document.createElement('button');
+        settingsBtn.className = 'param-settings-btn';
+        settingsBtn.title = '参数设置';
+        settingsBtn.appendChild(createGearSvg());
+
+        rightWrap.appendChild(valueEl);
+        rightWrap.appendChild(settingsBtn);
+
+        header.appendChild(nameEl);
+        header.appendChild(rightWrap);
+
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.min = String(cfg.min);
+        slider.max = String(cfg.max);
+        slider.step = String(cfg.step);
+        slider.value = String(val);
+        slider.dataset.param = name;
+
+        slider.addEventListener('input', function () {
+          const paramName = this.dataset.param;
+          const paramVal = parseFloat(this.value);
+          params[paramName] = paramVal;
+          valueEl.textContent = formatParamValue(paramVal);
+          fps.setParams(params);
+        });
+
+        const rangeEl = document.createElement('div');
+        rangeEl.className = 'param-slider-range';
+        rangeEl.textContent = formatParamValue(cfg.min) + ' ~ ' + formatParamValue(cfg.max);
+
+        const settingsPanel = document.createElement('div');
+        settingsPanel.className = 'param-settings-panel';
+
+        const errorEl = document.createElement('div');
+        errorEl.className = 'param-settings-error';
+        settingsPanel.appendChild(errorEl);
+
+        const minRow = document.createElement('div');
+        minRow.className = 'param-settings-row';
+        const minLabel = document.createElement('span');
+        minLabel.className = 'param-settings-label';
+        minLabel.textContent = '最小';
+        const minInput = document.createElement('input');
+        minInput.type = 'number';
+        minInput.className = 'param-settings-input';
+        minInput.value = String(cfg.min);
+        minInput.step = 'any';
+        minRow.appendChild(minLabel);
+        minRow.appendChild(minInput);
+        settingsPanel.appendChild(minRow);
+
+        const maxRow = document.createElement('div');
+        maxRow.className = 'param-settings-row';
+        const maxLabel = document.createElement('span');
+        maxLabel.className = 'param-settings-label';
+        maxLabel.textContent = '最大';
+        const maxInput = document.createElement('input');
+        maxInput.type = 'number';
+        maxInput.className = 'param-settings-input';
+        maxInput.value = String(cfg.max);
+        maxInput.step = 'any';
+        maxRow.appendChild(maxLabel);
+        maxRow.appendChild(maxInput);
+        settingsPanel.appendChild(maxRow);
+
+        const stepRow = document.createElement('div');
+        stepRow.className = 'param-settings-row';
+        const stepLabel = document.createElement('span');
+        stepLabel.className = 'param-settings-label';
+        stepLabel.textContent = '步长';
+        const stepInput = document.createElement('input');
+        stepInput.type = 'number';
+        stepInput.className = 'param-settings-input';
+        stepInput.value = String(cfg.step);
+        stepInput.step = 'any';
+        stepRow.appendChild(stepLabel);
+        stepRow.appendChild(stepInput);
+        settingsPanel.appendChild(stepRow);
+
+        const applyBtn = document.createElement('button');
+        applyBtn.className = 'param-settings-apply-btn';
+        applyBtn.textContent = '应用';
+        settingsPanel.appendChild(applyBtn);
+
+        settingsBtn.addEventListener('click', function () {
+          const isOpen = settingsPanel.classList.contains('open');
+          settingsPanel.classList.toggle('open');
+          settingsBtn.classList.toggle('active');
+          if (!isOpen) {
+            minInput.value = String(cfg.min);
+            maxInput.value = String(cfg.max);
+            stepInput.value = String(cfg.step);
+            errorEl.textContent = '';
+          }
+        });
+
+        applyBtn.addEventListener('click', function () {
+          const newMin = parseFloat(minInput.value);
+          const newMax = parseFloat(maxInput.value);
+          const newStep = parseFloat(stepInput.value);
+
+          if (isNaN(newMin) || isNaN(newMax) || isNaN(newStep)) {
+            errorEl.textContent = '请输入有效的数值';
+            return;
+          }
+          if (newMin >= newMax) {
+            errorEl.textContent = '最小值必须小于最大值';
+            return;
+          }
+          if (newStep <= 0) {
+            errorEl.textContent = '步长必须大于 0';
+            return;
+          }
+
+          cfg.min = newMin;
+          cfg.max = newMax;
+          cfg.step = newStep;
+
+          if (params[name] < newMin) params[name] = newMin;
+          if (params[name] > newMax) params[name] = newMax;
+
+          slider.min = String(newMin);
+          slider.max = String(newMax);
+          slider.step = String(newStep);
+          slider.value = String(params[name]);
+          valueEl.textContent = formatParamValue(params[name]);
+          rangeEl.textContent = formatParamValue(newMin) + ' ~ ' + formatParamValue(newMax);
+
+          settingsPanel.classList.remove('open');
+          settingsBtn.classList.remove('active');
+          errorEl.textContent = '';
+
+          fps.setParams(params);
+        });
+
+        item.appendChild(header);
+        item.appendChild(slider);
+        item.appendChild(rangeEl);
+        item.appendChild(settingsPanel);
+        paramSliders.appendChild(item);
+      }
+
+      fps.setParams(params);
+      updatePlayButtonIcon();
+    }
 
     function renderFunctionList() {
       if (!list) return;
@@ -2454,7 +3100,7 @@
       if (!fps || fps.functions.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'function-list-empty';
-        empty.textContent = '— 暂无函数 —';
+        empty.textContent = i18n.t('function_empty');
         list.appendChild(empty);
         return;
       }
@@ -2470,11 +3116,12 @@
         expr.textContent = f.input;
         const del = document.createElement('button');
         del.className = 'function-item-delete';
-        del.textContent = '删除';
+        del.textContent = i18n.t('delete');
         (function (idx) {
           del.addEventListener('click', function () {
             fps.removeFunction(idx);
             renderFunctionList();
+            renderParamSliders();
           });
         })(i);
         item.appendChild(colorBox);
@@ -2486,17 +3133,25 @@
 
     function addFromInput() {
       if (!input || !input.value || !input.value.trim()) {
-        showToast('请输入函数表达式');
+        showToast(i18n.t('toast_please_input_func'));
         return;
       }
       const result = window.functionPlotterInstance.addFunction(input.value);
       if (result.ok) {
-        showToast('已添加函数');
+        showToast(i18n.t('toast_func_added'));
         input.value = '';
         renderFunctionList();
+        renderParamSliders();
       } else {
-        showToast('错误：' + (result.error || '无效'));
+        showToast(i18n.t('toast_func_error', { msg: result.error || i18n.t('func_empty_expr') }));
       }
+    }
+
+    if (playBtn) playBtn.addEventListener('click', toggleAnimation);
+    if (speedSelect) {
+      speedSelect.addEventListener('change', function () {
+        animSpeed = parseFloat(this.value) || 1;
+      });
     }
 
     if (addBtn) addBtn.addEventListener('click', addFromInput);
@@ -2506,7 +3161,8 @@
     if (clearBtn) clearBtn.addEventListener('click', function () {
       window.functionPlotterInstance.clearFunctions();
       renderFunctionList();
-      showToast('已清除所有函数');
+      renderParamSliders();
+      showToast(i18n.t('toast_func_cleared'));
     });
     if (zoomIn) zoomIn.addEventListener('click', function () {
       window.functionPlotterInstance.zoomByButton(10);
@@ -2517,6 +3173,12 @@
     // 初始绘制
     window.functionPlotterInstance.redraw();
     renderFunctionList();
+    renderParamSliders();
+
+    // 语言切换时重新渲染函数列表
+    document.addEventListener('languagechange', function () {
+      renderFunctionList();
+    });
   }
 
   // ============================================================
@@ -2528,6 +3190,11 @@
    * 绑定事件监听并设置初始 UI 状态。
    */
   function init() {
+    // 初始化国际化 / init i18n
+    if (window.i18n && typeof window.i18n.init === 'function') {
+      window.i18n.init();
+    }
+
     // 按钮事件 / button listeners
     const btnPredict = document.getElementById('btn-predict');
     const btnReset = document.getElementById('btn-reset');
@@ -2561,14 +3228,14 @@
 
     // 初始 UI 状态 / initial UI state
     const ensembleEl = document.getElementById('ensemble-result');
-    if (ensembleEl) ensembleEl.textContent = '— 等待输入 —';
+    if (ensembleEl) ensembleEl.textContent = i18n.t('waiting_input');
 
     const listEl = document.getElementById('method-list');
     if (listEl) {
       // 清空可能存在的占位文本，统一插入占位节点
       while (listEl.firstChild) listEl.removeChild(listEl.firstChild);
       const empty = document.createElement('div');
-      empty.textContent = '— 等待预测 —';
+      empty.textContent = i18n.t('waiting_predict');
       listEl.appendChild(empty);
     }
 
@@ -2600,6 +3267,76 @@
     if (!hasProfile) {
       showRegisterModal();
     }
+
+    // 语言切换事件监听 / language change event listener
+    document.addEventListener('languagechange', function () {
+      // 重新渲染预测系统相关内容
+      renderEnsemble();
+      renderNNResult();
+      renderMethodList();
+      renderFunctionFit();
+      renderOverfit();
+      renderOffset();
+      updatePredictButtonText();
+      setPredictButtonEnabled(true);
+
+      // 重新渲染函数列表
+      if (typeof renderFunctionList === 'function') {
+        // renderFunctionList 在 initFunctionPlotter 内部定义，需要通过实例触发
+      }
+      if (window.functionPlotterInstance) {
+        // 触发函数列表重新渲染（通过 app.js 内部的 renderFunctionList）
+      }
+
+      // 更新浮动头像标题
+      updateFloatingAvatar();
+
+      // 更新设置页语言选择器
+      const langSelect = document.getElementById('settings-language');
+      if (langSelect && i18n.getCurrentMode) {
+        langSelect.value = i18n.getCurrentMode();
+      }
+    });
+
+    initMobileOptimizations();
+  }
+
+  // ============================================================
+  // 移动端优化 / Mobile Optimizations
+  // ============================================================
+  function initMobileOptimizations() {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (!isMobile && window.innerWidth > 768) return;
+
+    const inputs = document.querySelectorAll('input, textarea, select');
+    for (let i = 0; i < inputs.length; i++) {
+      inputs[i].addEventListener('focus', function () {
+        const el = this;
+        setTimeout(function () {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      });
+    }
+
+    let lastWidth = window.innerWidth;
+    window.addEventListener('resize', function () {
+      const currentWidth = window.innerWidth;
+      if (Math.abs(currentWidth - lastWidth) > 100) {
+        lastWidth = currentWidth;
+        const active = document.activeElement;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+          setTimeout(function () {
+            active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 100);
+        }
+      }
+    });
+
+    document.addEventListener('touchstart', function (e) {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    }, { passive: false });
   }
 
   // ============================================================
@@ -2638,6 +3375,13 @@
   } else {
     init();
   }
+
+  // ============================================================
+  // 暴露到全局 / Expose to global
+  // ============================================================
+  window.showLearningLanding = showLearningLanding;
+  window.showArithmetic = showArithmetic;
+  window.showMixedArithmetic = showMixedArithmetic;
 
   // ============================================================
   // 自检 / Self-test
