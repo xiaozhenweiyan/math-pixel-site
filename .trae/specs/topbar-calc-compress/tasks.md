@@ -36,9 +36,9 @@
   - [x] SubTask 5.5: 移除原 readImageFile 中的 maxSize 硬校验（保留格式校验）
   - [x] SubTask 5.6: 压缩过程中显示 toast "正在压缩图片..."（大文件时）
 
-- [ ] Task 6: 推送 GitHub
-  - [ ] SubTask 6.1: 提交并推送到 origin main + gh-pages
-  - [ ] SubTask 6.2: 验证 https://xiaozhenweiyan.github.io/math-pixel-site/ 可访问
+- [x] Task 6: 推送 GitHub
+  - [x] SubTask 6.1: 提交并推送到 origin main + gh-pages
+  - [x] SubTask 6.2: 验证 https://xiaozhenweiyan.github.io/math-pixel-site/ 可访问
 
 # Task Dependencies
 - [Task 1] 独立
