@@ -1281,63 +1281,6 @@ footer.pixel-panel p {
 }
 
 /* ============================================================
-   顶栏 / Topbar
-   ============================================================ */
-.topbar {
-  position: fixed;
-  top: -48px; left: 0; right: 0;
-  height: 48px;
-  background: #1a1a2e;
-  border-bottom: 3px solid #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  z-index: 9998;
-  box-sizing: border-box;
-  font-family: 'Courier New', monospace;
-  transition: top 0.3s ease;
-}
-.topbar.visible { top: 0; }
-.topbar-left, .topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.topbar-avatar {
-  width: 32px;
-  height: 32px;
-  background: #4a4a6e;
-  background-size: cover;
-  background-position: center;
-  border: 3px solid #ffffff;
-  border-radius: 4px;
-  color: #ffd700;
-  font-weight: bold;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.topbar-nickname {
-  color: #ffd700;
-  font-size: 14px;
-  font-weight: bold;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.topbar-btn {
-  padding: 4px 12px !important;
-  font-size: 13px !important;
-}
-body {
-  padding-top: 48px;
-}
-
-/* ============================================================
    设置页面 / Settings Page
    ============================================================ */
 .settings-page {
@@ -1409,4 +1352,140 @@ body {
   background: #1a1a2e;
   cursor: pointer;
   padding: 2px;
+}
+
+/* ============================================================
+   像素风格工具网站首页 / App Landing Page
+   ============================================================ */
+.app-landing-page {
+  display: none;
+  min-height: 100vh;
+  background: #1a1a2e;
+  position: relative;
+  overflow: hidden;
+}
+.app-landing-page.active {
+  display: block;
+}
+.app-user-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  margin: 16px;
+  background: #1a1a2e;
+  border: 3px solid #ffffff;
+  border-radius: 4px;
+}
+.app-user-left, .app-user-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.app-avatar {
+  width: 36px;
+  height: 36px;
+  background: #4a4a6e;
+  background-size: cover;
+  background-position: center;
+  border: 3px solid #ffffff;
+  border-radius: 4px;
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: 'Courier New', monospace;
+}
+.app-nickname {
+  color: #ffd700;
+  font-size: 16px;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-landing-content {
+  text-align: center;
+  padding: 60px 20px 40px;
+  position: relative;
+  z-index: 2;
+}
+.app-landing-title {
+  color: #ffd700;
+  font-family: 'Courier New', monospace;
+  font-size: 48px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-shadow: 4px 4px 0 #000000;
+  margin: 0 0 12px;
+}
+.app-landing-subtitle {
+  color: #ffffff;
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  letter-spacing: 6px;
+  margin: 0 0 48px;
+  opacity: 0.7;
+}
+.app-landing-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+.app-landing-card {
+  background: #1a1a2e;
+  border: 3px solid #ffffff;
+  border-radius: 4px;
+  padding: 24px;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  box-shadow: 6px 6px 0 #000000;
+}
+.app-landing-card:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: 9px 9px 0 #000000;
+  border-color: #ffd700;
+}
+.app-landing-card:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 #000000;
+}
+.app-landing-card-icon {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffd700;
+  border-radius: 4px;
+  background: #0d0d1f;
+}
+.app-landing-card-body {
+  text-align: center;
+}
+.app-landing-card-title {
+  color: #ffd700;
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.app-landing-card-desc {
+  color: #ffffff;
+  font-size: 13px;
+  opacity: 0.8;
+  line-height: 1.4;
 }

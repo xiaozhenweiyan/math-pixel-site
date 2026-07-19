@@ -131,7 +131,7 @@
       profile.nickname = nickname;
       saveProfile();
       hideRegisterModal();
-      updateTopbar();
+      updateAppUserBar();
       showToast('欢迎你，' + nickname + '！');
     }
 
@@ -140,7 +140,7 @@
       profile.nickname = '访客';
       saveProfile();
       hideRegisterModal();
-      updateTopbar();
+      updateAppUserBar();
       showToast('已使用默认昵称"访客"');
     });
     if (input) input.addEventListener('keydown', function (e) {
@@ -152,11 +152,11 @@
   }
 
   // ============================================================
-  // 顶栏 / Topbar
+  // 工具首页用户信息栏 / App User Bar
   // ============================================================
-  function updateTopbar() {
-    const avatarEl = document.getElementById('topbar-avatar');
-    const nicknameEl = document.getElementById('topbar-nickname');
+  function updateAppUserBar() {
+    const avatarEl = document.getElementById('app-avatar');
+    const nicknameEl = document.getElementById('app-nickname');
     if (nicknameEl) nicknameEl.textContent = profile.nickname;
     if (avatarEl) {
       if (profile.avatar) {
@@ -164,59 +164,22 @@
         avatarEl.textContent = '';
       } else {
         avatarEl.style.backgroundImage = '';
-        // 显示昵称首字（中文取第一个字符，英文取首字母大写）
         const firstChar = profile.nickname ? profile.nickname.charAt(0) : '?';
         avatarEl.textContent = firstChar;
       }
     }
   }
 
-  function initTopbar() {
-    const settingsBtn = document.getElementById('btn-settings');
-    const logoutBtn = document.getElementById('btn-logout');
+  function initAppUserBar() {
+    const settingsBtn = document.getElementById('btn-app-settings');
+    const logoutBtn = document.getElementById('btn-app-logout');
     if (settingsBtn) settingsBtn.addEventListener('click', showSettings);
     if (logoutBtn) logoutBtn.addEventListener('click', function () {
       clearProfile();
-      applyBackground();  // 恢复默认背景
-      updateTopbar();
+      applyBackground();
+      updateAppUserBar();
       showRegisterModal();
       showToast('已退出，数据已清除');
-    });
-  }
-
-  function initTopbarAutoHide() {
-    const topbar = document.getElementById('topbar');
-    if (!topbar) return;
-    let hideTimer = null;
-
-    // 鼠标移到顶栏内时取消隐藏计时器并显示
-    topbar.addEventListener('mouseenter', function () {
-      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
-      topbar.classList.add('visible');
-    });
-    topbar.addEventListener('mouseleave', function () {
-      if (hideTimer) clearTimeout(hideTimer);
-      hideTimer = setTimeout(function () {
-        topbar.classList.remove('visible');
-      }, 300);
-    });
-
-    // 监听整个文档的鼠标移动
-    document.addEventListener('mousemove', function (e) {
-      const y = e.clientY;
-      if (y <= 6) {
-        // 鼠标移到页面顶部，显示顶栏
-        if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
-        topbar.classList.add('visible');
-      } else if (y > 54) {
-        // 鼠标离开顶栏区域，延迟隐藏
-        if (!topbar.matches(':hover')) {
-          if (hideTimer) clearTimeout(hideTimer);
-          hideTimer = setTimeout(function () {
-            topbar.classList.remove('visible');
-          }, 300);
-        }
-      }
     });
   }
 
@@ -225,10 +188,12 @@
   // ============================================================
 
   function showSettings() {
+    const appLanding = document.getElementById('app-landing-page');
     const landing = document.getElementById('landing-page');
     const predictor = document.getElementById('predictor-page');
     const calc = document.getElementById('calculator-page');
     const settings = document.getElementById('settings-page');
+    if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.remove('active');
     if (calc) calc.classList.remove('active');
@@ -356,7 +321,7 @@
         if (nickname.length > 20) nickname = nickname.slice(0, 20);
         profile.nickname = nickname;
         saveProfile();
-        updateTopbar();
+        updateAppUserBar();
         updateSettingsAvatarPreview();
         showToast('昵称已更新：' + nickname);
       });
@@ -385,7 +350,7 @@
           reader.onload = function (e) {
             profile.avatar = e.target.result;
             saveProfile();
-            updateTopbar();
+            updateAppUserBar();
             updateSettingsAvatarPreview();
             showToast('头像已更新');
           };
@@ -402,7 +367,7 @@
         compressImage(file, 256, true).then(function (base64) {
           profile.avatar = base64;
           saveProfile();
-          updateTopbar();
+          updateAppUserBar();
           updateSettingsAvatarPreview();
           showToast('头像已更新');
         }).catch(function (err) {
@@ -418,7 +383,7 @@
       clearAvatarBtn.addEventListener('click', function () {
         profile.avatar = '';
         saveProfile();
-        updateTopbar();
+        updateAppUserBar();
         updateSettingsAvatarPreview();
         showToast('头像已清除');
       });
@@ -1877,21 +1842,38 @@
   // ============================================================
 
   function showLanding() {
+    const appLanding = document.getElementById('app-landing-page');
     const landing = document.getElementById('landing-page');
     const predictor = document.getElementById('predictor-page');
     const calc = document.getElementById('calculator-page');
     const settings = document.getElementById('settings-page');
+    if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.remove('hidden');
     if (predictor) predictor.classList.remove('active');
     if (calc) calc.classList.remove('active');
     if (settings) settings.classList.remove('active');
   }
 
-  function showPredictor() {
+  function showAppLanding() {
+    const appLanding = document.getElementById('app-landing-page');
     const landing = document.getElementById('landing-page');
     const predictor = document.getElementById('predictor-page');
     const calc = document.getElementById('calculator-page');
     const settings = document.getElementById('settings-page');
+    if (appLanding) appLanding.classList.add('active');
+    if (landing) landing.classList.add('hidden');
+    if (predictor) predictor.classList.remove('active');
+    if (calc) calc.classList.remove('active');
+    if (settings) settings.classList.remove('active');
+  }
+
+  function showPredictor() {
+    const appLanding = document.getElementById('app-landing-page');
+    const landing = document.getElementById('landing-page');
+    const predictor = document.getElementById('predictor-page');
+    const calc = document.getElementById('calculator-page');
+    const settings = document.getElementById('settings-page');
+    if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.add('active');
     if (calc) calc.classList.remove('active');
@@ -1904,10 +1886,12 @@
   }
 
   function showCalculator() {
+    const appLanding = document.getElementById('app-landing-page');
     const landing = document.getElementById('landing-page');
     const predictor = document.getElementById('predictor-page');
     const calc = document.getElementById('calculator-page');
     const settings = document.getElementById('settings-page');
+    if (appLanding) appLanding.classList.remove('active');
     if (landing) landing.classList.add('hidden');
     if (predictor) predictor.classList.remove('active');
     if (calc) calc.classList.add('active');
@@ -1921,12 +1905,16 @@
     const btnBackCalc = document.getElementById('btn-back-home-calc');
     const btnBackSettings = document.getElementById('btn-back-home-settings');
     const btnFloatingSettings = document.getElementById('btn-floating-settings');
+    const btnEnterMath = document.getElementById('btn-enter-math');
+    const btnBackToTools = document.getElementById('btn-back-to-tools');
     if (btnPredictor) btnPredictor.addEventListener('click', showPredictor);
     if (btnCalc) btnCalc.addEventListener('click', showCalculator);
     if (btnBackPredict) btnBackPredict.addEventListener('click', showLanding);
     if (btnBackCalc) btnBackCalc.addEventListener('click', showLanding);
     if (btnFloatingSettings) btnFloatingSettings.addEventListener('click', showSettings);
-    if (btnBackSettings) btnBackSettings.addEventListener('click', showLanding);
+    if (btnBackSettings) btnBackSettings.addEventListener('click', showAppLanding);
+    if (btnEnterMath) btnEnterMath.addEventListener('click', showLanding);
+    if (btnBackToTools) btnBackToTools.addEventListener('click', showAppLanding);
   }
 
   // ============================================================
@@ -1997,12 +1985,13 @@
 
     // 用户档案与设置初始化 / user profile and settings init
     const hasProfile = loadProfile();
-    updateTopbar();
+    updateAppUserBar();
     applyBackground();
     initRegisterModal();
-    initTopbar();
-    initTopbarAutoHide();
+    initAppUserBar();
     initSettings();
+    // 默认显示工具首页 / show app landing page by default
+    showAppLanding();
     if (!hasProfile) {
       showRegisterModal();
     }

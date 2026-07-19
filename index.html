@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>数学学习网站</title>
+  <title>像素风格工具网站 Pixel Tools</title>
   <link rel="stylesheet" href="styles/pixel.css">
 </head>
 <body>
   <!-- 注册弹窗 / Register Modal -->
   <div id="register-modal" class="register-modal" style="display:none;">
     <div class="register-modal-content pixel-panel">
-      <h2>欢迎来到数学学习网站</h2>
+      <h2>欢迎来到像素风格工具网站</h2>
       <p>请输入你的昵称（可跳过）</p>
       <input type="text" id="register-nickname" class="pixel-input" maxlength="20" placeholder="访客">
       <div class="register-modal-buttons">
@@ -20,20 +20,47 @@
     </div>
   </div>
 
-  <!-- 顶栏 / Topbar -->
-  <div class="topbar" id="topbar">
-    <div class="topbar-left">
-      <div class="topbar-avatar" id="topbar-avatar">访</div>
-      <span class="topbar-nickname" id="topbar-nickname">访客</span>
+  <!-- 像素风格工具网站首页 / App Landing Page -->
+  <div id="app-landing-page" class="app-landing-page">
+    <div class="app-user-bar pixel-panel">
+      <div class="app-user-left">
+        <div class="app-avatar" id="app-avatar">访</div>
+        <span class="app-nickname" id="app-nickname">访客</span>
+      </div>
+      <div class="app-user-right">
+        <button id="btn-app-settings" class="pixel-btn">设置</button>
+        <button id="btn-app-logout" class="pixel-btn">退出</button>
+      </div>
     </div>
-    <div class="topbar-right">
-      <button id="btn-settings" class="pixel-btn topbar-btn">设置</button>
-      <button id="btn-logout" class="pixel-btn topbar-btn">退出</button>
+    <div class="app-landing-content">
+      <h1 class="app-landing-title">像素风格工具网站</h1>
+      <p class="app-landing-subtitle">PIXEL TOOLS</p>
+      <div class="app-landing-cards">
+        <button class="app-landing-card" id="btn-enter-math">
+          <div class="app-landing-card-icon">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <rect x="6" y="6" width="36" height="36" stroke="#ffd700" stroke-width="3" fill="#1a1a2e"/>
+              <text x="24" y="32" text-anchor="middle" fill="#ffd700" font-family="Courier New" font-size="22" font-weight="bold">π</text>
+              <circle cx="14" cy="14" r="2" fill="#1e90ff"/>
+              <circle cx="34" cy="14" r="2" fill="#ff4500"/>
+              <circle cx="14" cy="34" r="2" fill="#228b22"/>
+              <circle cx="34" cy="34" r="2" fill="#ffd700"/>
+            </svg>
+          </div>
+          <div class="app-landing-card-body">
+            <div class="app-landing-card-title">像素数学</div>
+            <div class="app-landing-card-desc">数字序列预测 · 计算器 · 神经网络可视化</div>
+          </div>
+        </button>
+        <!-- 后续可在此添加更多工具卡片 -->
+      </div>
     </div>
+    <div class="landing-pixels"></div>
   </div>
 
   <!-- 数学学习网站落地页 / Landing Page -->
-  <div id="landing-page" class="landing-page">
+  <div id="landing-page" class="landing-page hidden">
+    <button class="floating-back-btn" id="btn-back-to-tools">← 返回工具首页</button>
     <div class="landing-content">
       <h1 class="landing-title">数学学习网站</h1>
       <p class="landing-subtitle">MATH LEARNING SITE</p>

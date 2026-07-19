@@ -1,0 +1,21 @@
+- [ ] GitHub 仓库已重命名为 pixel-tools（https://github.com/xiaozhenweiyan/pixel-tools HTTP 200）
+- [ ] 外层"像素风格工具网站"落地页显示标题"像素风格工具网站"和副标题"PIXEL TOOLS"
+- [ ] 外层落地页有"像素数学"卡片，点击进入内层"数学学习网站"落地页
+- [ ] 外层落地页顶部有用户信息区（头像+昵称+设置+退出按钮）
+- [ ] 内层"数学学习网站"落地页有"← 返回工具首页"按钮，点击回到外层落地页
+- [ ] 注册弹窗标题改为"欢迎来到像素风格工具网站"
+- [ ] 顶栏 div 已移除，body padding-top 已移除
+- [ ] 顶栏相关 CSS（.topbar、.topbar.visible 等）已移除
+- [ ] 顶栏相关 JS 函数（updateTopbar、initTopbar、initTopbarAutoHide）已移除
+- [ ] 用户信息更新函数改为 updateAppUserBar，在注册/退出/保存昵称/上传头像后调用
+- [ ] 浮动齿轮按钮在所有页面可见，点击进入设置页
+- [ ] 设置页"返回首页"按钮回到外层"像素风格工具网站"落地页
+- [ ] 预测/计算器浮动返回按钮回到内层"数学学习网站"落地页（不变）
+- [ ] 页面 title 改为"像素风格工具网站 Pixel Tools"
+- [ ] 所有新 UI 是像素风（3px 白边框、4px 圆角、Courier New、深空背景）
+- [ ] README.md 标题改为"像素风格工具网站 / Pixel Tools"
+- [ ] README.md 部署地址更新为 https://xiaozhenweiyan.github.io/pixel-tools/
+- [ ] README.md 仓库地址更新为 https://github.com/xiaozhenweiyan/pixel-tools
+- [ ] 代码已推送到 origin main + gh-pages
+- [ ] https://xiaozhenweiyan.github.io/pixel-tools/ 可访问（HTTP 200）
+- [ ] 旧的 https://xiaozhenweiyan.github.io/math-pixel-site/ 自动重定向到新地址（GitHub 重命名后自动处理）
