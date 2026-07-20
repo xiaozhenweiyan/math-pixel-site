@@ -10,7 +10,7 @@
  * 每次部署后必须升级 CACHE_NAME 版本号，确保旧缓存被清除。
  */
 
-const CACHE_VERSION = 'v9';
+const CACHE_VERSION = 'v10';
 const CACHE_NAME = 'pixel-tools-' + CACHE_VERSION;
 
 const PRECACHE_URLS = [
@@ -40,7 +40,6 @@ const PRECACHE_URLS = [
   './js/image-pixelizer.js',
   './js/pixel-clock.js',
   './js/pixel-rpg.js',
-  './js/background-particles.js',
   './manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
 ];

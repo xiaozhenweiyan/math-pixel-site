@@ -4191,11 +4191,6 @@
       showRegisterModal();
     }
 
-    // 初始化背景粒子交互系统 / init background particles
-    if (window.BackgroundParticles && typeof window.BackgroundParticles.init === 'function') {
-      window.BackgroundParticles.init(document.getElementById('bg-particles-canvas'));
-    }
-
     // 语言切换事件监听 / language change event listener
     document.addEventListener('languagechange', function () {
       // 重新渲染预测系统相关内容

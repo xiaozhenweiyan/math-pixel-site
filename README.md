@@ -28,7 +28,6 @@ https://xiaozhenweiyan.github.io/pixel-tools/
 - 中英文双语支持
 - PWA 离线可用
 - 响应式设计（桌面+移动端）
-- 背景粒子交互效果
 - 首页分类折叠展开（状态持久化）
 - 首页"最近使用"快捷区（记录最近 3 个工具）
 - ESC 键返回上一级页面
@@ -80,7 +79,6 @@ pixel-tools/
 │   ├── image-pixelizer.js      # 图像像素化
 │   ├── pixel-clock.js          # 像素时钟
 │   ├── pixel-rpg.js            # 像素RPG
-│   └── background-particles.js # 背景粒子
 ├── wasm/
 │   ├── reaction-diffusion.c    # 反应扩散 C 源码
 │   └── build.sh                # Emscripten 编译脚本

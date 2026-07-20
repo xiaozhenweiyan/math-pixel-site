@@ -550,12 +550,6 @@
       rpg_help_3: 'ESC：暂停 / 退出菜单',
       rpg_canvas_title: '游戏画面',
 
-      // 背景粒子交互系统 / Background Particles
-      bg_particles_menu: '背景粒子设置',
-      bg_particles_enabled: '启用粒子',
-      bg_particles_count: '粒子数量',
-      bg_particles_reset: '重置位置',
-
       delete: '删除'
     },
 
@@ -1092,12 +1086,6 @@
       rpg_help_2: 'Space / Enter: Interact / Confirm',
       rpg_help_3: 'ESC: Pause / Exit menu',
       rpg_canvas_title: 'Game Screen',
-
-      // Background Particles
-      bg_particles_menu: 'Background Particles Settings',
-      bg_particles_enabled: 'Enable Particles',
-      bg_particles_count: 'Particle Count',
-      bg_particles_reset: 'Reset Positions',
 
       delete: 'Delete'
     }
