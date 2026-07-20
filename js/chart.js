@@ -173,6 +173,58 @@ function chartFormatVal(v) {
   return n.toFixed(2);
 }
 
+// 1-2-5 nice unit 序列，覆盖 1e-9 到 1e9 全范围 / 1-2-5 magnitude series
+var CHART_NICE_MAGNITUDES = [
+  1e-9, 5e-9, 1e-8, 5e-8, 1e-7, 5e-7, 1e-6, 5e-6, 1e-5, 5e-5,
+  1e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 0.1, 0.2, 0.5,
+  1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000,
+  20000, 50000, 100000, 5e5, 1e6, 5e6, 1e7, 5e7, 1e8, 5e8, 1e9
+];
+
+/**
+ * 在 1-2-5 nice unit 序列中找到最接近 rawUnits 的值。
+ * 用于网格线 / 刻度间距自适应。返回值恒 > 0。
+ */
+function findNiceUnit(rawUnits) {
+  var raw = Math.abs(rawUnits);
+  if (!isFinite(raw) || raw <= 0) return 1;
+  var best = CHART_NICE_MAGNITUDES[0];
+  var minDiff = Math.abs(raw - best);
+  for (var i = 1; i < CHART_NICE_MAGNITUDES.length; i++) {
+    var diff = Math.abs(raw - CHART_NICE_MAGNITUDES[i]);
+    if (diff < minDiff) {
+      minDiff = diff;
+      best = CHART_NICE_MAGNITUDES[i];
+    }
+  }
+  return best;
+}
+
+/**
+ * 刻度数字格式化：
+ *   - 0 → "0"
+ *   - 整数 → 原值字符串
+ *   - |value| >= 10000 或 0 < |value| < 0.001 → 科学计数法（如 1e4, 1e-4）
+ *   - 其他小数 → 最多 3 位小数（去尾零）
+ */
+function formatTickNumber(value) {
+  var v = Number(value);
+  if (!isFinite(v)) return '—';
+  if (v === 0) return '0';
+  var abs = Math.abs(v);
+  if (abs >= 10000 || abs < 0.001) {
+    // 科学计数法：JS 原生 toExponential 输出 "1e+4"，去掉正号和前导零
+    var exp = v.toExponential(0); // "1e+4" / "1e-4"
+    return exp.replace('e+', 'e').replace('e-0', 'e-').replace('e+0', 'e');
+  }
+  if (Number.isInteger(v)) return String(v);
+  // 小数：最多 3 位，去尾零
+  var s = v.toFixed(3);
+  // 去掉末尾多余的零和小数点
+  s = s.replace(/0+$/, '').replace(/\.$/, '');
+  return s;
+}
+
 // ============================================================
 // 折线图布局 / Line Chart Layout（基于视口，绘制与命中测试共享）
 // ============================================================
@@ -332,9 +384,8 @@ function drawLineChart(canvas, series, ensemblePredictions, methodPredictions, f
     lineChartState.viewport.xMin = 1;
     lineChartState.viewport.xMax = totalX;
   }
-  // 钳制水平视口到合法范围 / clamp horizontal viewport
-  if (lineChartState.viewport.xMax > totalX) lineChartState.viewport.xMax = totalX;
-  if (lineChartState.viewport.xMin < 1) lineChartState.viewport.xMin = 1;
+  // 不再钳制水平视口到数据范围 [1, totalX]：允许缩放/平移超出数据范围
+  // （显示空白区域，不崩溃）。仅防止视口塌缩（xMin >= xMax）。
   if (lineChartState.viewport.xMin >= lineChartState.viewport.xMax) {
     lineChartState.viewport.xMin = 1;
     lineChartState.viewport.xMax = totalX;
@@ -397,15 +448,27 @@ function drawLineChartGrid(ctx, L) {
   ctx.strokeStyle = CHART_GRID;
   ctx.lineWidth = 1;
   ctx.setLineDash([]);
-  var yTickCount = 5;
-  for (var i = 0; i <= yTickCount; i++) {
-    var gy = L.plotT + ((L.plotB - L.plotT) / yTickCount) * i;
-    ctx.beginPath(); ctx.moveTo(L.plotL, gy); ctx.lineTo(L.plotR, gy); ctx.stroke();
+  var xRange = L.xMax - L.xMin;
+  var yRange = L.yMax - L.yMin;
+  if (xRange <= 0 || yRange <= 0) return;
+  var xScale = L.plotW / xRange; // 每数据单位对应的像素数
+  var yScale = L.plotH / yRange;
+  // 目标刻度像素间距：X 约 80px，Y 约 60px
+  var xStep = findNiceUnit(80 / xScale);
+  var yStep = findNiceUnit(60 / yScale);
+  // 水平网格线（Y 轴方向）
+  var yStart = Math.ceil(L.yMin / yStep) * yStep;
+  var yEnd = Math.floor(L.yMax / yStep) * yStep;
+  // 浮点累加可能产生精度漂移，用相对容差判断终止
+  for (var yv = yStart; yv <= yEnd + yStep * 1e-6; yv += yStep) {
+    var gyp = L.yToPx(yv);
+    ctx.beginPath(); ctx.moveTo(L.plotL, gyp); ctx.lineTo(L.plotR, gyp); ctx.stroke();
   }
-  // 垂直网格：按视口步长取约 6 条
-  var xStep = Math.max(1, Math.round((L.xMax - L.xMin) / 6));
-  for (var xi = Math.ceil(L.xMin); xi <= Math.floor(L.xMax); xi += xStep) {
-    var gxp = L.xToPx(xi);
+  // 垂直网格线（X 轴方向）
+  var xStart = Math.ceil(L.xMin / xStep) * xStep;
+  var xEnd = Math.floor(L.xMax / xStep) * xStep;
+  for (var xv = xStart; xv <= xEnd + xStep * 1e-6; xv += xStep) {
+    var gxp = L.xToPx(xv);
     ctx.beginPath(); ctx.moveTo(gxp, L.plotT); ctx.lineTo(gxp, L.plotB); ctx.stroke();
   }
 }
@@ -423,17 +486,42 @@ function drawLineChartAxes(ctx, L) {
 function drawLineChartTicks(ctx, L) {
   ctx.fillStyle = CHART_BORDER;
   chartFont(ctx, 11);
-  var yTickCount = 5;
-  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-  for (var i = 0; i <= yTickCount; i++) {
-    var yVal = L.yMin + (L.yMax - L.yMin) * (1 - i / yTickCount);
-    var yp = L.plotT + ((L.plotB - L.plotT) / yTickCount) * i;
-    ctx.fillText(chartFormatVal(yVal), L.plotL - 8, yp);
+  var xRange = L.xMax - L.xMin;
+  var yRange = L.yMax - L.yMin;
+  if (xRange <= 0 || yRange <= 0) {
+    drawLineChartUnitLength(ctx, L);
+    return;
   }
+  var xScale = L.plotW / xRange;
+  var yScale = L.plotH / yRange;
+  // 与 drawLineChartGrid 使用同一 nice unit，确保刻度数字与网格线对齐
+  var xStep = findNiceUnit(80 / xScale);
+  var yStep = findNiceUnit(60 / yScale);
+
+  // Y 轴刻度数字（右对齐，垂直居中）
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  var yStart = Math.ceil(L.yMin / yStep) * yStep;
+  var yEnd = Math.floor(L.yMax / yStep) * yStep;
+  var lastYp = null;
+  for (var yv = yStart; yv <= yEnd + yStep * 1e-6; yv += yStep) {
+    var yp = L.yToPx(yv);
+    // 防重叠：与上一个刻度数字像素间距 < 30px 时跳过
+    if (lastYp !== null && Math.abs(yp - lastYp) < 30) continue;
+    ctx.fillText(formatTickNumber(yv), L.plotL - 8, yp);
+    lastYp = yp;
+  }
+
+  // X 轴刻度数字（水平居中，顶部对齐到轴下方）
   ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-  var xStep = Math.max(1, Math.round((L.xMax - L.xMin) / 8));
-  for (var xi = Math.ceil(L.xMin); xi <= Math.floor(L.xMax); xi += xStep) {
-    ctx.fillText(String(xi), L.xToPx(xi), L.plotB + 8);
+  var xStart = Math.ceil(L.xMin / xStep) * xStep;
+  var xEnd = Math.floor(L.xMax / xStep) * xStep;
+  var lastXp = null;
+  for (var xv = xStart; xv <= xEnd + xStep * 1e-6; xv += xStep) {
+    var xp = L.xToPx(xv);
+    // 防重叠：与上一个刻度数字像素间距 < 30px 时跳过
+    if (lastXp !== null && Math.abs(xp - lastXp) < 30) continue;
+    ctx.fillText(formatTickNumber(xv), xp, L.plotB + 8);
+    lastXp = xp;
   }
 
   drawLineChartUnitLength(ctx, L);
@@ -454,30 +542,17 @@ function drawLineChartUnitLength(ctx, L) {
   const xRawUnits = targetPixels / xScale;
   const yRawUnits = targetPixels / yScale;
 
-  const magnitudes = [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100];
-
-  function findBestUnit(raw) {
-    let best = magnitudes[0];
-    let minDiff = Math.abs(raw - best);
-    for (let i = 1; i < magnitudes.length; i++) {
-      const diff = Math.abs(raw - magnitudes[i]);
-      if (diff < minDiff) {
-        minDiff = diff;
-        best = magnitudes[i];
-      }
-    }
-    return best;
-  }
-
-  const xUnit = findBestUnit(xRawUnits);
-  const yUnit = findBestUnit(yRawUnits);
+  // 复用全局 findNiceUnit（1-2-5 序列，1e-9 ~ 1e9）
+  const xUnit = findNiceUnit(xRawUnits);
+  const yUnit = findNiceUnit(yRawUnits);
 
   ctx.strokeStyle = CHART_GOLD;
   ctx.fillStyle = CHART_GOLD;
   ctx.lineWidth = 2;
 
   const xPxLen = xUnit * xScale;
-  const xLabel = xUnit >= 1 ? String(xUnit) : xUnit.toFixed(2);
+  // 指示条标签：显示当前 nice unit（如 "1 unit = 80px" / "0.5 unit = 40px"）
+  const xLabel = formatTickNumber(xUnit) + ' unit = ' + Math.round(xPxLen) + 'px';
   if (L.plotL + xPxLen + 40 < L.plotR) {
     var xsx = L.plotL + 14;
     var xsy = L.plotB - 14;
@@ -500,7 +575,7 @@ function drawLineChartUnitLength(ctx, L) {
   }
 
   const yPxLen = yUnit * yScale;
-  const yLabel = yUnit >= 1 ? String(yUnit) : yUnit.toFixed(2);
+  const yLabel = formatTickNumber(yUnit) + ' unit = ' + Math.round(yPxLen) + 'px';
   if (L.plotT + yPxLen + 30 < L.plotB) {
     var ysx = L.plotL + 14;
     var ysy = L.plotB - 18;
@@ -975,19 +1050,17 @@ function findNearestLineChartPoint(mx, my, threshold) {
 /** 缩放折线图水平视口 / zoom horizontal viewport by factor (<1 放大, >1 缩小)。 */
 function zoomLineChart(factor) {
   var vp = lineChartState.viewport;
-  var n = lineChartState.series.length;
-  var ensPreds = lineChartState.ensemblePredictions || [];
-  var predCount = ensPreds.length;
-  var totalX = Math.max(n + Math.max(predCount, 1), 2);
   var center = (vp.xMin + vp.xMax) / 2;
   var newRange = (vp.xMax - vp.xMin) * factor;
-  newRange = Math.max(3, Math.min(totalX, newRange));
+  // 放宽钳制到 [1e-6, 1e9]：支持无限缩放，视口可超出数据范围（显示空白）
+  newRange = Math.max(1e-6, Math.min(1e9, newRange));
   vp.xMin = center - newRange / 2;
   vp.xMax = center + newRange / 2;
-  if (vp.xMin < 1) { vp.xMax += (1 - vp.xMin); vp.xMin = 1; }
-  if (vp.xMax > totalX) { vp.xMin -= (vp.xMax - totalX); vp.xMax = totalX; }
-  if (vp.xMin < 1) vp.xMin = 1;
-  if (vp.xMin >= vp.xMax) { vp.xMin = 1; vp.xMax = totalX; }
+  // 防止视口塌缩：仅当极小数值精度问题导致 xMin >= xMax 时兜底
+  if (vp.xMin >= vp.xMax) {
+    vp.xMin = center - 0.5;
+    vp.xMax = center + 0.5;
+  }
 }
 
 /** 拖拽平移折线图视口 / pan viewport by pixel deltas。 */
@@ -1000,16 +1073,10 @@ function panLineChart(deltaPxX, deltaPxY) {
   // Convert pixel delta to data coordinate delta
   var dataX = (deltaPxX / layout.plotW) * (vp.xMax - vp.xMin);
   var dataY = (deltaPxY / layout.plotH) * (vp.yMax - vp.yMin);
-  var n = lineChartState.series.length;
-  var ensPreds = lineChartState.ensemblePredictions || [];
-  var predCount = ensPreds.length;
-  var totalX = Math.max(n + Math.max(predCount, 1), 2);
+  // 放宽钳制：允许视口中心移到数据范围外（显示空白区域，不崩溃）
   // Pan X
   vp.xMin -= dataX;
   vp.xMax -= dataX;
-  if (vp.xMin < 1) { vp.xMax += (1 - vp.xMin); vp.xMin = 1; }
-  if (vp.xMax > totalX) { vp.xMin -= (vp.xMax - totalX); vp.xMax = totalX; }
-  if (vp.xMin < 1) vp.xMin = 1;
   // Pan Y
   vp.yMin += dataY;
   vp.yMax += dataY;

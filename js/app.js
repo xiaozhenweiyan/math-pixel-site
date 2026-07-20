@@ -3570,25 +3570,52 @@
     }
 
     // 获取当前激活模式下的参数名列表 / get parameter names for the active mode
+    // 合并自动识别的参数（来自表达式 AST）和用户手动添加的 customParams，去重排序
     function getActiveParamNames() {
+      const paramSet = {};
       if (currentMode === '3d' && window.Function3D && typeof window.Function3D.getParams === 'function') {
         try {
           const info = window.Function3D.getParams();
-          if (info && info.names) return info.names;
+          if (info && info.names) {
+            for (let i = 0; i < info.names.length; i++) paramSet[info.names[i]] = true;
+          }
         } catch (e) { /* ignore */ }
-        return [];
+      } else {
+        const fps = window.functionPlotterInstance;
+        if (fps) {
+          const auto = fps.getAllParams();
+          for (let i = 0; i < auto.length; i++) paramSet[auto[i]] = true;
+        }
       }
+      // 合并 customParams（2D 和 3D 模式都允许手动添加参数）
       const fps = window.functionPlotterInstance;
-      return fps ? fps.getAllParams() : [];
+      if (fps && fps.customParams && fps.customParams.length) {
+        for (let i = 0; i < fps.customParams.length; i++) {
+          const cp = fps.customParams[i];
+          if (cp && cp.name) paramSet[cp.name] = true;
+        }
+      }
+      return Object.keys(paramSet).sort();
     }
 
     // 把当前 params 同步到当前激活的渲染器 / sync params to the active renderer
+    // 同时注入 customParams 的值（即使表达式中未使用该参数也不报错）
     function applyParamsToActive() {
+      // 合并 customParams 的当前值到 params 副本，避免污染本地 params 状态
+      const merged = Object.assign({}, params);
+      const fps = window.functionPlotterInstance;
+      if (fps && fps.customParams && fps.customParams.length) {
+        for (let i = 0; i < fps.customParams.length; i++) {
+          const cp = fps.customParams[i];
+          if (cp && cp.name && typeof cp.value === 'number') {
+            if (!merged.hasOwnProperty(cp.name)) merged[cp.name] = cp.value;
+          }
+        }
+      }
       if (currentMode === '3d' && window.Function3D) {
-        try { window.Function3D.setParams(params); } catch (e) { /* ignore */ }
+        try { window.Function3D.setParams(merged); } catch (e) { /* ignore */ }
       } else {
-        const fps = window.functionPlotterInstance;
-        if (fps) fps.setParams(params);
+        if (fps) fps.setParams(merged);
       }
     }
 
@@ -3802,20 +3829,93 @@
       }
     }
 
+    // 手动添加自定义参数 / manually add a custom parameter
+    // 弹出输入框，校验参数名（非空、长度 1-3、仅字母、非保留字、非重复）
+    // 校验通过后添加到 functionPlotterInstance.customParams 并重新渲染滑动条
+    function addCustomParam() {
+      const fps = window.functionPlotterInstance;
+      if (!fps) return;
+
+      const raw = prompt('请输入参数名（如 k, m, t）：');
+      if (raw === null) return; // 用户取消
+      const name = (raw || '').trim();
+
+      // 校验：非空
+      if (!name) {
+        alert('参数名不能为空');
+        return;
+      }
+      // 校验：长度 1-3 字符
+      if (name.length < 1 || name.length > 3) {
+        alert('参数名长度必须为 1-3 个字符');
+        return;
+      }
+      // 校验：仅字母
+      if (!/^[a-zA-Z]+$/.test(name)) {
+        alert('参数名只能包含字母（a-z, A-Z）');
+        return;
+      }
+      const nameLower = name.toLowerCase();
+      // 校验：不与保留字冲突
+      const reserved = ['x', 'pi', 'e', 'sin', 'cos', 'tan', 'log', 'sqrt', 'abs', 'exp', 'ln'];
+      if (reserved.indexOf(nameLower) >= 0) {
+        alert(nameLower + ' 是保留字，不能作为参数名');
+        return;
+      }
+      // 校验：不与已有参数重复（自动识别的参数 + customParams）
+      const existing = getActiveParamNames();
+      if (existing.indexOf(nameLower) >= 0) {
+        alert('参数 ' + nameLower + ' 已存在');
+        return;
+      }
+
+      // 校验通过：添加到 customParams
+      const newParam = {
+        name: nameLower,
+        value: PARAM_DEFAULT_VALUE,
+        min: PARAM_DEFAULT_MIN,
+        max: PARAM_DEFAULT_MAX,
+        step: PARAM_DEFAULT_STEP,
+        phase: Math.random() * Math.PI * 2
+      };
+      if (!fps.customParams) fps.customParams = [];
+      fps.customParams.push(newParam);
+
+      // 同步默认值到本地 params 状态
+      params[nameLower] = newParam.value;
+
+      // 重新渲染滑动条并同步到渲染器
+      renderParamSliders();
+      applyParamsToActive();
+    }
+
     function renderParamSliders() {
       if (!paramPanel || !paramSliders) return;
       // 通过统一抽象获取参数名（兼容 2D 和 3D 模式）
       const allParams = getActiveParamNames();
 
+      // 始终显示参数面板，无参数时显示提示文本（不再完全隐藏 param-panel）
+      paramPanel.style.display = 'block';
+
+      // 控制提示文本、滑动条容器、动画栏的显隐
+      const emptyHint = paramPanel.querySelector('.param-empty-hint');
+      const addBtn = paramPanel.querySelector('.param-add-btn');
+
       if (allParams.length === 0) {
-        paramPanel.style.display = 'none';
+        // 无参数：显示提示文本，隐藏滑动条容器和动画栏
+        if (emptyHint) emptyHint.style.display = 'block';
+        if (addBtn) addBtn.style.display = 'inline-block';
+        paramSliders.style.display = 'none';
         if (animBar) animBar.style.display = 'none';
         stopAnimation();
         animPausedTime = 0;
         return;
       }
 
-      paramPanel.style.display = 'block';
+      // 有参数：隐藏提示文本，显示滑动条容器和动画栏
+      if (emptyHint) emptyHint.style.display = 'none';
+      if (addBtn) addBtn.style.display = 'inline-block';
+      paramSliders.style.display = 'flex';
       if (animBar) animBar.style.display = 'flex';
 
       while (paramSliders.firstChild) {
@@ -4065,6 +4165,16 @@
     if (speedSelect) {
       speedSelect.addEventListener('change', function () {
         animSpeed = parseFloat(this.value) || 1;
+      });
+    }
+
+    // 绑定"添加参数"按钮：使用事件委托兼容动态创建的按钮
+    if (paramPanel) {
+      paramPanel.addEventListener('click', function (e) {
+        const target = e.target.closest('.param-add-btn');
+        if (target) {
+          addCustomParam();
+        }
       });
     }
 

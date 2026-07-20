@@ -2647,6 +2647,47 @@ footer.pixel-panel p {
   min-height: 14px;
 }
 
+/* 无参数提示文本 / Empty hint when no parameters */
+.param-empty-hint {
+  color: #aaaaaa;
+  text-align: center;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  background: #0d0d1f;
+  border: 2px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+/* 添加参数按钮 / Add Custom Parameter Button */
+.param-add-btn {
+  display: inline-block;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: var(--font);
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: #fff;
+  background: var(--bg-panel);
+  border: var(--border-thick) solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  cursor: pointer;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  transition: transform 0.05s, box-shadow 0.05s, background 0.05s;
+  user-select: none;
+}
+.param-add-btn:hover {
+  background: var(--bg-panel-hover);
+  border-color: var(--accent);
+}
+.param-add-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: var(--shadow-pressed);
+}
+
 /* ============================================================
    像素绘图编辑器 / Pixel Drawing Editor
    ============================================================ */

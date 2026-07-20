@@ -36,6 +36,7 @@
       this.scale = 40;   // 单位长度像素数
       this.functions = [];  // [{ expr, fn, color, input, ast }]
       this.params = {};  // 参数值 { a: 1, b: 2, ... }
+      this.customParams = [];  // 用户手动添加的自定义参数 [{ name, value, min, max, step, phase }]
       this.dragging = false;
       this.lastMouseX = 0;
       this.lastMouseY = 0;
@@ -85,23 +86,53 @@
     drawGrid() {
       const ctx = this.ctx;
       const w = this.width, h = this.height;
-      // 网格线：每 1 单位一条
+      const niceUnit = this.getUnitLength();
+
+      // 次网格线（更淡）：步长 niceUnit / 5
+      // 仅当次网格像素间距 >= 8px 时绘制，避免过密影响性能与视觉
+      const minorUnit = niceUnit / 5;
+      if (minorUnit * this.scale >= 8) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+        ctx.lineWidth = 1;
+        // 垂直次网格线
+        const xmStart = Math.floor(this.toMathX(0) / minorUnit) * minorUnit;
+        const xmEnd = Math.ceil(this.toMathX(w) / minorUnit) * minorUnit;
+        for (let x = xmStart; x <= xmEnd + minorUnit * 1e-6; x += minorUnit) {
+          const px = this.toPixelX(x);
+          ctx.beginPath();
+          ctx.moveTo(px, 0);
+          ctx.lineTo(px, h);
+          ctx.stroke();
+        }
+        // 水平次网格线
+        const ymStart = Math.floor(this.toMathY(h) / minorUnit) * minorUnit;
+        const ymEnd = Math.ceil(this.toMathY(0) / minorUnit) * minorUnit;
+        for (let y = ymStart; y <= ymEnd + minorUnit * 1e-6; y += minorUnit) {
+          const py = this.toPixelY(y);
+          ctx.beginPath();
+          ctx.moveTo(0, py);
+          ctx.lineTo(w, py);
+          ctx.stroke();
+        }
+      }
+
+      // 主网格线：步长 niceUnit（保持原有淡色风格）
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
       ctx.lineWidth = 1;
-      // 垂直网格线（沿 x 方向）
-      const xStart = Math.floor(this.toMathX(0));
-      const xEnd = Math.ceil(this.toMathX(w));
-      for (let x = xStart; x <= xEnd; x++) {
+      // 垂直主网格线（沿 x 方向），加 niceUnit * 1e-6 容差防浮点漂移漏画
+      const xStart = Math.floor(this.toMathX(0) / niceUnit) * niceUnit;
+      const xEnd = Math.ceil(this.toMathX(w) / niceUnit) * niceUnit;
+      for (let x = xStart; x <= xEnd + niceUnit * 1e-6; x += niceUnit) {
         const px = this.toPixelX(x);
         ctx.beginPath();
         ctx.moveTo(px, 0);
         ctx.lineTo(px, h);
         ctx.stroke();
       }
-      // 水平网格线（沿 y 方向）
-      const yStart = Math.floor(this.toMathY(h));
-      const yEnd = Math.ceil(this.toMathY(0));
-      for (let y = yStart; y <= yEnd; y++) {
+      // 水平主网格线（沿 y 方向）
+      const yStart = Math.floor(this.toMathY(h) / niceUnit) * niceUnit;
+      const yEnd = Math.ceil(this.toMathY(0) / niceUnit) * niceUnit;
+      for (let y = yStart; y <= yEnd + niceUnit * 1e-6; y += niceUnit) {
         const py = this.toPixelY(y);
         ctx.beginPath();
         ctx.moveTo(0, py);
@@ -152,42 +183,54 @@
         ctx.textBaseline = 'top';
         ctx.fillText('O', yAxisX - 4, xAxisY + 4);
       }
-      // 刻度数字
+      // 刻度数字（与主网格线使用同一 niceUnit，确保对齐）
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 11px "Courier New", monospace';
+      const niceUnit = this.getUnitLength();
+      // x 轴刻度
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      // x 轴刻度
-      const xStart = Math.floor(this.toMathX(0));
-      const xEnd = Math.ceil(this.toMathX(w));
-      for (let x = xStart; x <= xEnd; x++) {
-        if (x === 0) continue;
+      const xStart = Math.floor(this.toMathX(0) / niceUnit) * niceUnit;
+      const xEnd = Math.ceil(this.toMathX(w) / niceUnit) * niceUnit;
+      let lastTickPx = -Infinity;
+      for (let x = xStart; x <= xEnd + niceUnit * 1e-6; x += niceUnit) {
+        // 跳过 0（原点已标 "O"），用容差判断防浮点漂移
+        if (Math.abs(x) < niceUnit * 1e-6) continue;
         const px = this.toPixelX(x);
         if (px < 0 || px > w) continue;
+        // 防重叠：与上一个已绘制刻度像素间距 < 30px 则跳过
+        if (px - lastTickPx < 30) continue;
+        const label = this.formatTickNumber(x);
         if (xAxisY >= 0 && xAxisY <= h) {
-          ctx.fillText(String(x), px, xAxisY + 4);
+          ctx.fillText(label, px, xAxisY + 4);
         } else if (xAxisY < 0) {
-          ctx.fillText(String(x), px, 4);
+          ctx.fillText(label, px, 4);
         } else {
-          ctx.fillText(String(x), px, h - 16);
+          ctx.fillText(label, px, h - 16);
         }
+        lastTickPx = px;
       }
       // y 轴刻度
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
-      const yStart = Math.floor(this.toMathY(h));
-      const yEnd = Math.ceil(this.toMathY(0));
-      for (let y = yStart; y <= yEnd; y++) {
-        if (y === 0) continue;
+      const yStart = Math.floor(this.toMathY(h) / niceUnit) * niceUnit;
+      const yEnd = Math.ceil(this.toMathY(0) / niceUnit) * niceUnit;
+      let lastTickPy = -Infinity;
+      for (let y = yStart; y <= yEnd + niceUnit * 1e-6; y += niceUnit) {
+        if (Math.abs(y) < niceUnit * 1e-6) continue;
         const py = this.toPixelY(y);
         if (py < 0 || py > h) continue;
+        // 防重叠：Y 轴方向用绝对值判断（py 可能递减）
+        if (Math.abs(py - lastTickPy) < 30) continue;
+        const label = this.formatTickNumber(y);
         if (yAxisX >= 0 && yAxisX <= w) {
-          ctx.fillText(String(y), yAxisX - 4, py);
+          ctx.fillText(label, yAxisX - 4, py);
         } else if (yAxisX < 0) {
-          ctx.fillText(String(y), w - 4, py);
+          ctx.fillText(label, w - 4, py);
         } else {
-          ctx.fillText(String(y), 36, py);
+          ctx.fillText(label, 36, py);
         }
+        lastTickPy = py;
       }
       // 轴标签 x / y
       ctx.fillStyle = '#ffd700';
@@ -209,7 +252,8 @@
     drawUnitLength(ctx, w, h, yAxisX, xAxisY) {
       const unitLen = this.getUnitLength();
       const pxLen = this.scale * unitLen;
-      const label = unitLen >= 1 ? String(unitLen) : unitLen.toFixed(2);
+      // 标签格式：<niceUnit> unit = <niceUnit * scale>px，niceUnit 用 formatTickNumber 格式化
+      const label = this.formatTickNumber(unitLen) + ' unit = ' + this.formatTickNumber(pxLen) + 'px';
 
       ctx.strokeStyle = '#ffd700';
       ctx.fillStyle = '#ffd700';
@@ -261,7 +305,13 @@
     getUnitLength() {
       const targetPixels = 60;
       const rawUnits = targetPixels / this.scale;
-      const magnitudes = [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100];
+      // 扩展的 1-2-5 序列，覆盖 1e-9 到 1e9 全范围，支持无限缩放
+      const magnitudes = [
+        1e-9, 5e-9, 1e-8, 5e-8, 1e-7, 5e-7, 1e-6, 5e-6, 1e-5, 5e-5,
+        1e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 0.1, 0.2, 0.5,
+        1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000,
+        20000, 50000, 100000, 5e5, 1e6, 5e6, 1e7, 5e7, 1e8, 5e8, 1e9
+      ];
       let best = magnitudes[0];
       let minDiff = Math.abs(rawUnits - best);
       for (let i = 1; i < magnitudes.length; i++) {
@@ -272,6 +322,25 @@
         }
       }
       return best;
+    }
+
+    // 格式化刻度数字：整数原样显示，小数最多 3 位去尾零，过大/过小用科学计数法
+    formatTickNumber(value) {
+      if (value === 0) return '0';
+      // 清理浮点累加噪声（如 1.5000000000000001e-4 -> 1.5e-4），12 位有效数字足够且不丢真值
+      value = Number(value.toPrecision(12));
+      const abs = Math.abs(value);
+      // |value| >= 10000 或 0 < |value| < 0.001 时用科学计数法
+      if (abs >= 10000 || abs < 0.001) {
+        // toExponential 返回 "1e+4" / "1e-4"，统一为 "1e4" / "1e-4"
+        return value.toExponential().replace('e+', 'e');
+      }
+      // 整数直接转字符串
+      if (Number.isInteger(value)) return String(value);
+      // 小数最多 3 位，去掉尾零
+      let s = value.toFixed(3);
+      s = s.replace(/0+$/, '').replace(/\.$/, '');
+      return s;
     }
 
     plotFunction(fn, color) {
@@ -429,7 +498,7 @@
         const mathX = self.toMathX(mx);
         const mathY = self.toMathY(my);
         const factor = e.deltaY < 0 ? 1.1 : 0.9;
-        self.scale = Math.max(10, Math.min(200, self.scale * factor));
+        self.scale = Math.max(1e-9, Math.min(1e9, self.scale * factor));
         self.originX = mx - mathX * self.scale;
         self.originY = my + mathY * self.scale;
         self.redraw();
@@ -485,7 +554,7 @@
               const mathY = self.toMathY(cy);
 
               const factor = dist / self.lastTouchDist;
-              self.scale = Math.max(10, Math.min(200, self.scale * factor));
+              self.scale = Math.max(1e-9, Math.min(1e9, self.scale * factor));
 
               const newCx = centerX - rect.left;
               const newCy = centerY - rect.top;
@@ -535,7 +604,7 @@
       const cy = this.height / 2;
       const mathX = this.toMathX(cx);
       const mathY = this.toMathY(cy);
-      this.scale = Math.max(10, Math.min(200, this.scale + delta));
+      this.scale = Math.max(1e-9, Math.min(1e9, this.scale + delta));
       this.originX = cx - mathX * this.scale;
       this.originY = cy + mathY * this.scale;
       this.redraw();
