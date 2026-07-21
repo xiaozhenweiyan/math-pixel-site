@@ -408,9 +408,27 @@
       if (!parseResult.ok) {
         return { ok: false, error: i18n.t('func_parse_error', { msg: parseResult.error }) };
       }
-      // 测试求值（传入当前参数）
+      // 测试求值（为识别到但未定义的参数提供临时默认值 1，避免因参数未定义而拒绝添加函数）
+      // 这样含参数的函数（如 y=a*x^2+b*x+c 或隐式乘法 y=ax^2+bx+c）能成功添加，
+      // 随后由 addFromInput 中的多参数弹窗逻辑提示用户创建参数滑动条
       try {
-        const testVal = window.ExpressionParser.evalAst(parseResult.ast, 1, this.params);
+        const tempParams = {};
+        // 合并当前已有的 params（用户已创建的参数值优先）
+        if (this.params) {
+          for (const key in this.params) {
+            if (this.params.hasOwnProperty(key)) tempParams[key] = this.params[key];
+          }
+        }
+        // 为表达式中识别到但未定义的参数提供临时默认值 1
+        if (window.ExpressionParser && window.ExpressionParser.extractParams) {
+          const paramNames = window.ExpressionParser.extractParams(parseResult.ast);
+          for (let k = 0; k < paramNames.length; k++) {
+            if (!tempParams.hasOwnProperty(paramNames[k])) {
+              tempParams[paramNames[k]] = 1;
+            }
+          }
+        }
+        const testVal = window.ExpressionParser.evalAst(parseResult.ast, 1, tempParams);
         if (typeof testVal !== 'number') return { ok: false, error: i18n.t('func_not_number') };
       } catch (e) {
         return { ok: false, error: i18n.t('func_parse_error', { msg: e.message }) };
