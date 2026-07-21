@@ -171,15 +171,18 @@ window.MathCardsExt = (function () {
       btn.textContent = label;
     }
     btn.style.cssText = [
-      'padding: 5px 12px',
-      'background: ' + (bg || COLORS.accent),
-      'border: none',
-      'border-radius: 3px',
-      'color: ' + (color || COLORS.bgDeep),
+      'padding: 6px 14px',
+      'background: ' + (bg || COLORS.bgDeep),
+      'border: 2px solid ' + COLORS.accent,
+      'border-radius: 4px',
+      'color: ' + (color || COLORS.accent),
       'font-family: monospace',
-      'font-size: 14px',
+      'font-size: 15px',
       'font-weight: bold',
-      'cursor: pointer'
+      'cursor: pointer',
+      'position: relative',
+      'z-index: 10',
+      'display: inline-block'
     ].join(';');
     parent.appendChild(btn);
     return btn;
@@ -279,7 +282,7 @@ window.MathCardsExt = (function () {
     panel.appendChild(slash2);
     const d2 = createInput(panel, { value: '3', width: '40px' });
 
-    const demoBtn = createButton(panel, '演示动画', COLORS.bgDeep, COLORS.accent, 'btn_demo_anim');
+    const demoBtn = createButton(panel, '演示动画', null, null, 'btn_demo_anim');
 
     // 动画状态
     let animState = null;
@@ -580,7 +583,7 @@ window.MathCardsExt = (function () {
     createLabel(panel, '小数2:');
     const dec2 = createInput(panel, { value: '0.4', width: '70px' });
 
-    const demoBtn = createButton(panel, '演示动画', COLORS.bgDeep, COLORS.accent, 'btn_demo_anim');
+    const demoBtn = createButton(panel, '演示动画', null, null, 'btn_demo_anim');
 
     let animState = null;
     let rafId = null;
@@ -946,7 +949,7 @@ window.MathCardsExt = (function () {
 
     createLabel(panel, '方程:');
     const eqInput = createInput(panel, { value: '2x+3=7', width: '140px' });
-    const demoBtn = createButton(panel, '求解演示', COLORS.bgDeep, COLORS.accent, 'btn_solve_demo');
+    const demoBtn = createButton(panel, '求解演示', null, null, 'btn_solve_demo');
     createLabel(panel, '示例: 2x+3=7 / x^2-5x+6=0', COLORS.textDim);
 
     let animState = null;
@@ -1654,7 +1657,7 @@ window.MathCardsExt = (function () {
     const panel = createPanel(canvas);
 
     // 控件
-    const startBtn = createButton(panel, '开始挑战 (60秒)', COLORS.bgDeep, COLORS.accent, 'btn_start_challenge');
+    const startBtn = createButton(panel, '开始挑战 (60秒)', null, null, 'btn_start_challenge');
     const nameInput = createInput(panel, { value: '', placeholder: '昵称', width: '100px' });
     createLabel(panel, '答对+10分 答错-5分 难度递增', COLORS.textDim);
 
