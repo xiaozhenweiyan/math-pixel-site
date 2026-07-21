@@ -4133,85 +4133,93 @@
         showToast(i18n.t('toast_please_input_func'));
         return;
       }
-      // 在添加前先保存表达式副本（用于 3D 模式同步）
+      // 先保存表达式副本（用于 3D 模式同步）
       const exprCopy = input.value.trim();
-      const result = window.functionPlotterInstance.addFunction(input.value);
-      if (result.ok) {
-        showToast(i18n.t('toast_func_added'));
-        input.value = '';
-        renderFunctionList();
-        renderParamSliders();
-        // 3D 模式下：把当前函数输入框的表达式同步传给 Function3D
-        if (currentMode === '3d' && window.Function3D && typeof window.Function3D.setExpression === 'function') {
-          try {
-            window.Function3D.setExpression(exprCopy || 'sin(a*x)*cos(b*y)');
-          } catch (e) { /* ignore */ }
-        }
+      const fps = window.functionPlotterInstance;
 
-        // 参数自动创建确认弹窗（≥1 个参数即触发，支持显式乘法 y=a*x^2+b*x+c 与隐式乘法 y=ax^2+bx+c）
+      // === 新流程：先解析（不添加函数），检测参数，弹窗询问，用户确认后才添加 ===
+      // 这样用户点"取消"时，函数和滑动条都不会被创建
+      const parseResult = fps.parseFunction(exprCopy);
+      if (!parseResult.ok) {
+        showToast(i18n.t('toast_func_error', { msg: parseResult.error || i18n.t('func_empty_expr') }));
+        return;
+      }
+
+      // 提取表达式中的参数（支持显式乘法 y=a*x^2+b*x+c 与隐式乘法 y=ax^2+bx+c）
+      var paramNames = [];
+      if (window.ExpressionParser && parseResult.ast) {
         try {
-          if (window.ExpressionParser && result && result.ast) {
-            var paramNames = window.ExpressionParser.extractParams(result.ast);
-            if (paramNames && paramNames.length >= 1) {
-              var existingNames = (function () {
-                var fps0 = window.functionPlotterInstance;
-                if (!fps0 || !fps0.customParams) return {};
-                var map = {};
-                for (var i = 0; i < fps0.customParams.length; i++) {
-                  map[fps0.customParams[i].name] = true;
-                }
-                return map;
-              })();
-              // 过滤掉已存在的参数
-              var toCreate = paramNames.filter(function (n) { return !existingNames[n]; });
-              if (toCreate.length >= 1) {
-                var paramList = paramNames.join(', ');
-                // 单参数和多参数使用不同文案
-                var dialogTitle = paramNames.length >= 2 ? '检测到多个参数' : '检测到参数';
-                var dialogMessage = paramNames.length >= 2
-                  ? '检测到该函数包含参数：' + paramList + '。是否自动创建这些参数的滑动条？'
-                  : '检测到该函数包含参数：' + paramList + '。是否自动创建该参数的滑动条？';
-                var dialogConfirm = paramNames.length >= 2 ? '全部创建' : '创建';
-                window.showPixelDialog({
-                  title: dialogTitle,
-                  message: dialogMessage,
-                  confirmText: dialogConfirm,
-                  cancelText: '取消',
-                  onConfirm: function () {
-                    var fps = window.functionPlotterInstance;
-                    if (!fps) return;
-                    if (!fps.customParams) fps.customParams = [];
-                    var existing = {};
-                    for (var i = 0; i < fps.customParams.length; i++) {
-                      existing[fps.customParams[i].name] = true;
-                    }
-                    for (var j = 0; j < paramNames.length; j++) {
-                      var name = paramNames[j];
-                      if (existing[name]) continue;
-                      fps.customParams.push({
-                        name: name,
-                        value: 1,
-                        min: -10,
-                        max: 10,
-                        step: 0.1,
-                        phase: Math.random() * Math.PI * 2
-                      });
-                      if (fps.params) fps.params[name] = 1;
-                      params[name] = 1;
-                      existing[name] = true;
-                    }
-                    if (typeof renderParamSliders === 'function') renderParamSliders();
-                    if (typeof applyParamsToActive === 'function') applyParamsToActive();
-                  }
-                });
-              }
+          paramNames = window.ExpressionParser.extractParams(parseResult.ast) || [];
+        } catch (e) { /* ignore */ }
+      }
+
+      // 过滤掉已存在的参数（避免重复创建）
+      var existingNames = {};
+      if (fps.customParams) {
+        for (var ei = 0; ei < fps.customParams.length; ei++) {
+          existingNames[fps.customParams[ei].name] = true;
+        }
+      }
+      var toCreate = paramNames.filter(function (n) { return !existingNames[n]; });
+
+      // 辅助函数：实际添加函数 +（可选）创建参数滑动条
+      function doAddFunction(createParams) {
+        const result = fps.addFunction(exprCopy);
+        if (result.ok) {
+          showToast(i18n.t('toast_func_added'));
+          input.value = '';
+          if (createParams && toCreate.length >= 1) {
+            if (!fps.customParams) fps.customParams = [];
+            for (var j = 0; j < paramNames.length; j++) {
+              var name = paramNames[j];
+              if (existingNames[name]) continue;
+              fps.customParams.push({
+                name: name,
+                value: 1,
+                min: -10,
+                max: 10,
+                step: 0.1,
+                phase: Math.random() * Math.PI * 2
+              });
+              if (fps.params) fps.params[name] = 1;
+              params[name] = 1;
+              existingNames[name] = true;
             }
           }
-        } catch (e) {
-          console.error('参数检测失败:', e);
+          renderFunctionList();
+          renderParamSliders();
+          if (typeof applyParamsToActive === 'function') applyParamsToActive();
+          // 3D 模式下：把当前函数输入框的表达式同步传给 Function3D
+          if (currentMode === '3d' && window.Function3D && typeof window.Function3D.setExpression === 'function') {
+            try { window.Function3D.setExpression(exprCopy || 'sin(a*x)*cos(b*y)'); } catch (e) { /* ignore */ }
+          }
+        } else {
+          showToast(i18n.t('toast_func_error', { msg: result.error || i18n.t('func_empty_expr') }));
         }
+      }
+
+      // 有需要创建的参数（≥1）：先弹窗询问，用户确认后才添加函数+参数
+      if (toCreate.length >= 1) {
+        var paramList = paramNames.join(', ');
+        var dialogTitle = paramNames.length >= 2 ? '检测到多个参数' : '检测到参数';
+        var dialogMessage = paramNames.length >= 2
+          ? '检测到该函数包含参数：' + paramList + '。是否自动创建这些参数的滑动条？'
+          : '检测到该函数包含参数：' + paramList + '。是否自动创建该参数的滑动条？';
+        var dialogConfirm = paramNames.length >= 2 ? '全部创建' : '创建';
+        window.showPixelDialog({
+          title: dialogTitle,
+          message: dialogMessage,
+          confirmText: dialogConfirm,
+          cancelText: '取消',
+          hideInput: true,  // 不显示输入框，只有确定和取消
+          onConfirm: function () {
+            doAddFunction(true);  // 用户确认：添加函数 + 创建参数
+          }
+          // 用户取消：什么都不做，函数不添加，滑动条不创建
+        });
       } else {
-        showToast(i18n.t('toast_func_error', { msg: result.error || i18n.t('func_empty_expr') }));
+        // 无需创建参数（无参数或参数已全部存在）：直接添加函数
+        doAddFunction(false);
       }
     }
 
