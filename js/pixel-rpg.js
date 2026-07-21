@@ -91,6 +91,17 @@ window.PixelRPG = (function () {
     { name: '哥布林', hp: 10, atk: 7, def: 1, exp: 10, color: '#8b4513', color2: '#4a2408', weight: 14 }
   ];
 
+  // 物品模板（宝箱掉落 / 装备 / 消耗品）
+  const ITEM_TEMPLATES = [
+    { name: 'HP药水', type: 'consumable', effect: { hp: 10 }, stackable: true, color: '#ff4500', icon: '♥' },
+    { name: '经验宝石', type: 'consumable', effect: { exp: 15 }, stackable: true, instant: true, color: '#1e90ff', icon: '◆' },
+    { name: '铁剑', type: 'weapon', slot: 'weapon', atk: 3, color: '#c0c0c0', icon: '⚔' },
+    { name: '攻击戒指', type: 'weapon', slot: 'weapon', atk: 1, color: '#ffd700', icon: '○' },
+    { name: '钢甲', type: 'armor', slot: 'armor', def: 2, color: '#888888', icon: '🛡' },
+    { name: '防御护符', type: 'armor', slot: 'armor', def: 1, color: '#9370db', icon: '◈' }
+  ];
+  let itemIdCounter = 1;
+
   // BGM 旋律（C 大调五声音阶，8 音符循环）
   const BGM_MELODY = [
     { freq: 261.63, dur: 0.24 }, // C4
@@ -137,7 +148,11 @@ window.PixelRPG = (function () {
       autoNavigating: false,     // 是否正在自动导航
       hp: 20, maxHp: 20,
       atk: 5, def: 1,
-      level: 1, exp: 0, expToNext: 10
+      level: 1, exp: 0, expToNext: 10,
+      inventory: [],
+      inventoryMax: 16,
+      equipment: { weapon: null, armor: null },
+      attackTarget: null
     },
 
     // 怪物与宝箱
@@ -912,16 +927,45 @@ window.PixelRPG = (function () {
   }
 
   /**
+   * 朝向目标格子（根据 dx/dy 绝对值决定主方向）。
+   */
+  function faceTowards(tx, ty) {
+    const dx = tx - state.player.gx;
+    const dy = ty - state.player.gy;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      state.player.facing = dx > 0 ? 'right' : 'left';
+    } else {
+      state.player.facing = dy > 0 ? 'down' : 'up';
+    }
+  }
+
+  /**
    * 点击地图导航：计算 BFS 路径并启动自动导航。
    * - 玩家移动中(moving=true)或游戏结束(gameOver)时忽略
-   * - 路径不可达或长度 <2 时直接 return
+   * - 检测目标格是否有 alive 怪物，记录为 attackTarget
+   * - 路径不可达或长度 <2 时，若目标是相邻怪物则直接攻击
    * - 路径去掉起点后存入 pathQueue，设置 autoNavigating=true
    */
   function navigateTo(targetGx, targetGy) {
     if (state.player.moving) return;   // 移动中不接收新点击
     if (state.gameOver) return;
+    // 检测目标格是否有 alive 怪物
+    const targetMonster = state.monsters.find(m => m.alive && m.gx === targetGx && m.gy === targetGy);
+    state.player.attackTarget = targetMonster || null;
     const path = findPathBFS(state.player.gx, state.player.gy, targetGx, targetGy);
-    if (!path || path.length < 2) return; // 无路或已到达
+    if (!path || path.length < 2) {
+      // 已在目标相邻格且目标是怪物，直接攻击
+      if (targetMonster) {
+        const dx = Math.abs(targetMonster.gx - state.player.gx);
+        const dy = Math.abs(targetMonster.gy - state.player.gy);
+        if (dx + dy === 1) {
+          // 朝向怪物并攻击
+          faceTowards(targetMonster.gx, targetMonster.gy);
+          combatRound(targetMonster);
+        }
+      }
+      return;
+    }
     path.shift(); // 去掉起点
     state.player.pathQueue = path;
     state.player.autoNavigating = true;
@@ -986,7 +1030,7 @@ window.PixelRPG = (function () {
    */
   function combatRound(monster) {
     // 玩家攻击
-    const dmgToMonster = Math.max(1, state.player.atk - monster.def);
+    const dmgToMonster = Math.max(1, getEffectiveAtk() - monster.def);
     monster.hp -= dmgToMonster;
     showMessage('对 ' + monster.type + ' 造成 ' + dmgToMonster + ' 伤害', 0.9);
     playSound('attack');
@@ -999,7 +1043,7 @@ window.PixelRPG = (function () {
       return;
     }
     // 怪物反击
-    const dmgToPlayer = Math.max(1, monster.atk - state.player.def);
+    const dmgToPlayer = Math.max(1, monster.atk - getEffectiveDef());
     state.player.hp -= dmgToPlayer;
     playSound('hurt');
     if (state.player.hp <= 0) {
@@ -1013,29 +1057,154 @@ window.PixelRPG = (function () {
   }
 
   /**
-   * 打开宝箱，获得随机奖励。
+   * 计算玩家有效攻击力（基础 + 武器加成）。
+   */
+  function getEffectiveAtk() {
+    let atk = state.player.atk;
+    if (state.player.equipment.weapon) atk += state.player.equipment.weapon.atk || 0;
+    return atk;
+  }
+
+  /**
+   * 计算玩家有效防御力（基础 + 防具加成）。
+   */
+  function getEffectiveDef() {
+    let def = state.player.def;
+    if (state.player.equipment.armor) def += state.player.equipment.armor.def || 0;
+    return def;
+  }
+
+  /**
+   * 装备物品：从背包移到装备槽，旧装备退回背包。
+   */
+  function equipItem(item) {
+    if (item.type !== 'weapon' && item.type !== 'armor') return;
+    const slot = item.slot;
+    // 从背包移除
+    const idx = state.player.inventory.indexOf(item);
+    if (idx < 0) return;
+    state.player.inventory.splice(idx, 1);
+    // 旧装备退回背包
+    const old = state.player.equipment[slot];
+    if (old) {
+      if (state.player.inventory.length < state.player.inventoryMax) {
+        state.player.inventory.push(old);
+      } else {
+        // 背包满，放回装备槽
+        state.player.inventory.push(item);
+        showMessage('背包已满! 无法更换装备', 2);
+        return;
+      }
+    }
+    state.player.equipment[slot] = item;
+    showMessage('装备: ' + item.name, 1.5);
+    if (typeof renderInventory === 'function') renderInventory();
+    if (typeof renderEquipment === 'function') renderEquipment();
+  }
+
+  /**
+   * 卸下装备：从装备槽退回背包。
+   */
+  function unequipItem(slot) {
+    const item = state.player.equipment[slot];
+    if (!item) return;
+    if (state.player.inventory.length >= state.player.inventoryMax) {
+      showMessage('背包已满! 无法卸下', 2);
+      return;
+    }
+    state.player.inventory.push(item);
+    state.player.equipment[slot] = null;
+    showMessage('卸下: ' + item.name, 1.5);
+    if (typeof renderInventory === 'function') renderInventory();
+    if (typeof renderEquipment === 'function') renderEquipment();
+  }
+
+  /**
+   * 使用消耗品：恢复 HP 或获得经验，消耗后堆叠数-1。
+   */
+  function useItem(item) {
+    if (item.type !== 'consumable') return;
+    if (item.effect && item.effect.hp) {
+      if (state.player.hp >= state.player.maxHp) {
+        showMessage('HP 已满', 1.5);
+        return;
+      }
+      state.player.hp = Math.min(state.player.maxHp, state.player.hp + item.effect.hp);
+      showMessage('使用 ' + item.name + '! +' + item.effect.hp + ' HP', 1.5);
+    } else if (item.effect && item.effect.exp) {
+      state.player.exp += item.effect.exp;
+      showMessage('使用 ' + item.name + '! +' + item.effect.exp + ' EXP', 1.5);
+      checkLevelUp();
+    }
+    // 消耗：堆叠数量-1，数量为0则移除
+    if (item.count && item.count > 1) {
+      item.count--;
+    } else {
+      const idx = state.player.inventory.indexOf(item);
+      if (idx >= 0) state.player.inventory.splice(idx, 1);
+    }
+    if (typeof renderInventory === 'function') renderInventory();
+  }
+
+  /**
+   * 打开宝箱，获得随机物品（消耗品/装备；经验宝石即时消耗）。
    */
   function openChest(chest) {
     chest.opened = true;
-    const rewards = [
-      { type: 'hp',  amount: 10, msg: 'HP 药水! +10 HP' },
-      { type: 'atk', amount: 1,  msg: '攻击卷轴! ATK +1' },
-      { type: 'def', amount: 1,  msg: '防御卷轴! DEF +1' },
-      { type: 'exp', amount: 15, msg: '经验宝石! +15 EXP' }
-    ];
-    const r = rewards[Math.floor(Math.random() * rewards.length)];
-    if (r.type === 'hp') {
-      state.player.hp = Math.min(state.player.maxHp, state.player.hp + r.amount);
-    } else if (r.type === 'atk') {
-      state.player.atk += r.amount;
-    } else if (r.type === 'def') {
-      state.player.def += r.amount;
-    } else if (r.type === 'exp') {
-      state.player.exp += r.amount;
+    // 随机选一个物品模板（经验宝石权重降低，装备权重提高）
+    const weightedPool = [];
+    ITEM_TEMPLATES.forEach(t => {
+      const w = t.type === 'consumable' && t.instant ? 1 : (t.type === 'consumable' ? 3 : 2);
+      for (let i = 0; i < w; i++) weightedPool.push(t);
+    });
+    const tpl = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+
+    // 经验宝石即时消耗
+    if (tpl.instant && tpl.effect && tpl.effect.exp) {
+      state.player.exp += tpl.effect.exp;
+      showMessage('宝箱: 经验宝石! +' + tpl.effect.exp + ' EXP', 2);
       checkLevelUp();
+      playSound('chest');
+      if (typeof renderInventory === 'function') renderInventory();
+      return;
     }
-    showMessage('宝箱: ' + r.msg, 2);
+
+    // 背包满检查
+    if (state.player.inventory.length >= state.player.inventoryMax) {
+      showMessage('背包已满! 无法拾取 ' + tpl.name, 2);
+      playSound('chest');
+      return;
+    }
+
+    // 生成物品对象
+    const item = {
+      id: itemIdCounter++,
+      name: tpl.name,
+      type: tpl.type,
+      icon: tpl.icon,
+      color: tpl.color
+    };
+    if (tpl.type === 'consumable') {
+      item.effect = tpl.effect;
+      item.stackable = tpl.stackable;
+      // 堆叠：若已有同名消耗品，数量+1
+      const existing = state.player.inventory.find(it => it.name === item.name && it.stackable);
+      if (existing) {
+        existing.count = (existing.count || 1) + 1;
+      } else {
+        item.count = 1;
+        state.player.inventory.push(item);
+      }
+    } else {
+      item.slot = tpl.slot;
+      if (tpl.atk) item.atk = tpl.atk;
+      if (tpl.def) item.def = tpl.def;
+      state.player.inventory.push(item);
+    }
+
+    showMessage('宝箱: 获得 ' + tpl.name + '!', 2);
     playSound('chest');
+    if (typeof renderInventory === 'function') renderInventory();
   }
 
   /**
@@ -1112,11 +1281,15 @@ window.PixelRPG = (function () {
     ctx.fillStyle = COLOR.TEXT;
     ctx.fillText(state.player.exp + '/' + state.player.expToNext, 210, 38);
 
-    // ATK / DEF
+    // ATK / DEF（显示装备加成，如 ATK 5+3）
     ctx.fillStyle = COLOR.TEXT;
     ctx.font = '11px monospace';
-    ctx.fillText('ATK ' + state.player.atk, 295, 38);
-    ctx.fillText('DEF ' + state.player.def, 350, 38);
+    const atkBonus = state.player.equipment.weapon ? (state.player.equipment.weapon.atk || 0) : 0;
+    const defBonus = state.player.equipment.armor ? (state.player.equipment.armor.def || 0) : 0;
+    const atkText = atkBonus > 0 ? ('ATK ' + state.player.atk + '+' + atkBonus) : ('ATK ' + state.player.atk);
+    const defText = defBonus > 0 ? ('DEF ' + state.player.def + '+' + defBonus) : ('DEF ' + state.player.def);
+    ctx.fillText(atkText, 295, 38);
+    ctx.fillText(defText, 350, 38);
 
     // 关卡
     ctx.fillStyle = COLOR.TEXT;
@@ -1124,10 +1297,15 @@ window.PixelRPG = (function () {
     ctx.textAlign = 'right';
     ctx.fillText('第 ' + state.level + ' 关', CANVAS_W - 10, 14);
 
+    // 背包数量（关卡下方）
+    ctx.fillStyle = COLOR.TEXT_DIM;
+    ctx.font = '10px monospace';
+    ctx.fillText('背包 ' + state.player.inventory.length + '/' + state.player.inventoryMax, CANVAS_W - 10, 28);
+
     // 操作提示
     ctx.fillStyle = COLOR.TEXT_DIM;
     ctx.font = '10px monospace';
-    ctx.fillText('方向键/WASD 移动 · 空格/J 攻击 · R 重置', CANVAS_W - 10, 38);
+    ctx.fillText('方向键/WASD 移动 · 空格/J 攻击 · R 重置', CANVAS_W - 10, 44);
 
     ctx.textAlign = 'left';
   }
@@ -1209,25 +1387,46 @@ window.PixelRPG = (function () {
       state.player.frame = 0;
     }
 
-    // 自动导航：玩家不在移动中时消费 pathQueue
+    // 自动导航
     if (state.player.autoNavigating && !state.player.moving) {
       if (!state.player.pathQueue || state.player.pathQueue.length === 0) {
-        // 队列已空，结束自动导航
         state.player.autoNavigating = false;
+        // 到达后若有攻击目标且相邻，自动攻击
+        if (state.player.attackTarget && state.player.attackTarget.alive) {
+          const m = state.player.attackTarget;
+          const dx = Math.abs(m.gx - state.player.gx);
+          const dy = Math.abs(m.gy - state.player.gy);
+          if (dx + dy === 1) {
+            faceTowards(m.gx, m.gy);
+            combatRound(m);
+            if (!m.alive) state.player.attackTarget = null;
+          }
+        }
       } else {
         const next = state.player.pathQueue[0];
         const dx = next.x - state.player.gx;
         const dy = next.y - state.player.gy;
-        tryMove(dx, dy);
-        if (state.player.moving) {
-          // 移动已启动，消费这一步
-          state.player.pathQueue.shift();
-        } else {
-          // 被阻挡（墙/怪物战斗/宝箱打开/出口下楼/键盘接管），结束自动导航
-          state.player.pathQueue = [];
+        // 检查下一格是否有怪物
+        const blockingMonster = state.monsters.find(m => m.alive && m.gx === next.x && m.gy === next.y);
+        if (blockingMonster) {
+          // 怪物挡路：暂停导航，不清空队列，让玩家抉择
           state.player.autoNavigating = false;
+          state.player.attackTarget = blockingMonster;
+          faceTowards(blockingMonster.gx, blockingMonster.gy);
+          showMessage('前方有 ' + blockingMonster.type + '！攻击(空格)或绕路', 2);
+        } else {
+          tryMove(dx, dy);
+          if (state.player.moving) {
+            state.player.pathQueue.shift();
+          } else {
+            // tryMove 失败但非怪物阻挡（宝箱/出口等），保留队列暂停
+            state.player.autoNavigating = false;
+          }
         }
       }
+    } else if (!state.player.autoNavigating && state.player.attackTarget && !state.player.moving) {
+      // 暂停状态下若仍有攻击目标且玩家手动移动了相邻，可选自动攻击
+      // 此处保持简单：暂停后需玩家手动操作，不自动恢复
     }
   }
 
@@ -1372,6 +1571,9 @@ window.PixelRPG = (function () {
     canvas.addEventListener('pointerdown', onCanvasPointerDown);
     // 初始化游戏状态并渲染一帧
     reset();
+    // 初始化物品栏/装备栏 UI
+    if (typeof renderInventory === 'function') renderInventory();
+    if (typeof renderEquipment === 'function') renderEquipment();
   }
 
   /**
@@ -1417,7 +1619,11 @@ window.PixelRPG = (function () {
       autoNavigating: false,
       hp: 20, maxHp: 20,
       atk: 5, def: 1,
-      level: 1, exp: 0, expToNext: 10
+      level: 1, exp: 0, expToNext: 10,
+      inventory: [],
+      inventoryMax: 16,
+      equipment: { weapon: null, armor: null },
+      attackTarget: null
     };
     state.level = 1;
     state.gameOver = false;
@@ -1426,6 +1632,79 @@ window.PixelRPG = (function () {
     state.animTime = 0;
     generateMap(1);
     if (ctx) render();
+    if (typeof renderInventory === 'function') renderInventory();
+    if (typeof renderEquipment === 'function') renderEquipment();
+  }
+
+  // ============================================================
+  // 物品栏/装备栏 DOM 渲染 / Inventory & Equipment DOM Rendering
+  // ============================================================
+
+  /**
+   * 渲染物品栏 DOM：显示 inventoryMax 个格子，已占用的显示物品图标/名称/数量。
+   * 点击消耗品使用，点击装备穿戴。
+   */
+  function renderInventory() {
+    const grid = document.getElementById('rpg-inventory');
+    if (!grid) return;
+    grid.innerHTML = '';
+    for (let i = 0; i < state.player.inventoryMax; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'rpg-inventory-slot';
+      const item = state.player.inventory[i];
+      if (item) {
+        slot.classList.add('has-item');
+        const icon = document.createElement('span');
+        icon.className = 'item-icon';
+        icon.textContent = item.icon || '?';
+        icon.style.color = item.color || '#fff';
+        slot.appendChild(icon);
+        const name = document.createElement('span');
+        name.className = 'item-name';
+        name.textContent = item.name;
+        slot.appendChild(name);
+        if (item.count && item.count > 1) {
+          const cnt = document.createElement('span');
+          cnt.className = 'item-count';
+          cnt.textContent = 'x' + item.count;
+          slot.appendChild(cnt);
+        }
+        slot.title = item.type === 'consumable' ? '点击使用' : '点击装备';
+        slot.addEventListener('click', function () {
+          if (item.type === 'consumable') {
+            useItem(item);
+          } else {
+            equipItem(item);
+          }
+        });
+      } else {
+        slot.textContent = '·';
+      }
+      grid.appendChild(slot);
+    }
+  }
+
+  /**
+   * 渲染装备栏 DOM：显示武器/防具槽，点击卸下。
+   */
+  function renderEquipment() {
+    const weaponEl = document.getElementById('rpg-eq-weapon');
+    const armorEl = document.getElementById('rpg-eq-armor');
+    if (weaponEl) {
+      const w = state.player.equipment.weapon;
+      weaponEl.textContent = w ? (w.icon + ' ' + w.name) : '空';
+      weaponEl.style.color = w ? (w.color || '#fff') : 'var(--text-muted)';
+    }
+    if (armorEl) {
+      const a = state.player.equipment.armor;
+      armorEl.textContent = a ? (a.icon + ' ' + a.name) : '空';
+      armorEl.style.color = a ? (a.color || '#fff') : 'var(--text-muted)';
+    }
+    // 点击卸下
+    const wSlot = document.querySelector('.rpg-equipment-slot[data-slot="weapon"]');
+    const aSlot = document.querySelector('.rpg-equipment-slot[data-slot="armor"]');
+    if (wSlot) wSlot.onclick = function () { if (state.player.equipment.weapon) unequipItem('weapon'); };
+    if (aSlot) aSlot.onclick = function () { if (state.player.equipment.armor) unequipItem('armor'); };
   }
 
   return {

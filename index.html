@@ -1497,19 +1497,40 @@
     <main class="rpg-layout">
       <div class="pixel-panel rpg-controls">
         <h2 data-i18n="rpg_controls_title">控制台</h2>
-        <button id="btn-rpg-start" class="pixel-btn" data-i18n="rpg_start">开始游戏</button>
-        <button id="btn-rpg-stop" class="pixel-btn" data-i18n="rpg_stop">停止</button>
-        <button id="btn-rpg-reset" class="pixel-btn" data-i18n="rpg_reset">重置</button>
+        <div class="rpg-control-buttons">
+          <button id="btn-rpg-start" class="pixel-btn" data-i18n="rpg_start">开始游戏</button>
+          <button id="btn-rpg-stop" class="pixel-btn" data-i18n="rpg_stop">停止</button>
+          <button id="btn-rpg-reset" class="pixel-btn" data-i18n="rpg_reset">重置</button>
+        </div>
         <div class="rpg-help">
-          <p data-i18n="rpg_help_1">方向键 / WASD：移动角色</p>
-          <p data-i18n="rpg_help_2">空格 / 回车：交互 / 确认</p>
-          <p data-i18n="rpg_help_3">ESC：暂停 / 退出菜单</p>
+          <p data-i18n="rpg_help_1">方向键 / WASD：移动 · 点击：自动寻路</p>
+          <p data-i18n="rpg_help_2">空格 / J：攻击 · 点击怪物自动攻击</p>
+          <p data-i18n="rpg_help_3">R：重置</p>
         </div>
       </div>
-      <div class="pixel-panel rpg-canvas-panel">
-        <h2 data-i18n="rpg_canvas_title">游戏画面</h2>
-        <div class="rpg-canvas-wrap">
-          <canvas id="rpg-canvas"></canvas>
+      <div class="rpg-main-row">
+        <div class="pixel-panel rpg-canvas-panel">
+          <h2 data-i18n="rpg_canvas_title">游戏画面</h2>
+          <div class="rpg-canvas-wrap">
+            <canvas id="rpg-canvas"></canvas>
+          </div>
+        </div>
+        <div class="pixel-panel rpg-side-panel">
+          <!-- 装备栏 -->
+          <h2 data-i18n="rpg_equipment_title">装备</h2>
+          <div class="rpg-equipment" id="rpg-equipment">
+            <div class="rpg-equipment-slot" data-slot="weapon">
+              <span class="slot-label">武器</span>
+              <span class="slot-item" id="rpg-eq-weapon">空</span>
+            </div>
+            <div class="rpg-equipment-slot" data-slot="armor">
+              <span class="slot-label">防具</span>
+              <span class="slot-item" id="rpg-eq-armor">空</span>
+            </div>
+          </div>
+          <!-- 物品栏 -->
+          <h2 data-i18n="rpg_inventory_title">背包</h2>
+          <div class="rpg-inventory-grid" id="rpg-inventory"></div>
         </div>
       </div>
     </main>

@@ -553,6 +553,8 @@
       rpg_help_2: '空格 / 回车：交互 / 确认',
       rpg_help_3: 'ESC：暂停 / 退出菜单',
       rpg_canvas_title: '游戏画面',
+      rpg_equipment_title: '装备',
+      rpg_inventory_title: '背包',
 
       delete: '删除',
 
@@ -1123,6 +1125,8 @@
       rpg_help_2: 'Space / Enter: Interact / Confirm',
       rpg_help_3: 'ESC: Pause / Exit menu',
       rpg_canvas_title: 'Game Screen',
+      rpg_equipment_title: 'Equipment',
+      rpg_inventory_title: 'Inventory',
 
       delete: 'Delete',
 

@@ -835,6 +835,21 @@ cd wasm
 
 ## 更新日志
 
+### 2026-07 · RPG 物品栏/装备栏/地图布局/导航改进
+
+| # | 模块 | 更新内容 |
+|---|------|---------|
+| 1 | 像素 RPG · 物品栏 | 新增背包系统（16 格容量）。宝箱不再立即消耗奖励，改为掉落物品存入背包：HP 药水（消耗品，可堆叠）、经验宝石（即时消耗加 EXP）、铁剑/攻击戒指（武器）、钢甲/防御护符（防具）。背包满时提示且不拾取。 |
+| 2 | 像素 RPG · 装备栏 | 新增武器/防具两个装备槽。点击背包中的装备可装备（旧装备退回背包），点击装备槽可卸下。装备加成实时生效，`getEffectiveAtk()`/`getEffectiveDef()` 计算含装备的总属性，`combatRound` 使用有效属性计算伤害。顶部 UI 显示 `ATK 5+3` 格式（基础+装备加成）。 |
+| 3 | 像素 RPG · 地图布局 | RPG 页面从左右分栏改为上下布局：控制按钮（开始/停止/重置）横排在上，地图 canvas 在下独占大区域（`width:100%` 撑满面板），物品栏/装备栏侧边面板在右（240px）。移动端自动单列堆叠。地图视觉显著放大。 |
+| 4 | 像素 RPG · 点击怪物自动攻击 | 点击怪物时玩家自动 BFS 寻路到怪物相邻格，到达后**自动发起攻击**（无需手动按键）。新增 `attackTarget` 字段记录攻击意图，`navigateTo` 检测目标格怪物并设为攻击目标，`update` 到达后自动调用 `combatRound`。 |
+| 5 | 像素 RPG · 路径遇阻停下 | 自动导航中途遇怪物挡路时，玩家走到怪物面前**停下不动**，**不清空剩余路径**，显示"前方有 [怪物名]！攻击(空格)或绕路"让玩家抉择。击败怪物后重新点击目标可继续导航。修复原来 `tryMove` 失败直接清空整个 pathQueue 的问题。 |
+| 6 | 像素 RPG · UI 概览 | 顶部 UI 面板增加背包数量显示（`背包 N/16`）和装备加成显示（`ATK 5+3`/`DEF 1+2` 格式）。 |
+
+> 本次更新涉及文件：`js/pixel-rpg.js`（物品栏/装备栏数据结构、`ITEM_TEMPLATES`、`openChest` 重写、`equipItem`/`unequipItem`/`useItem`/`getEffectiveAtk`/`getEffectiveDef`/`faceTowards`/`renderInventory`/`renderEquipment` 新增、`navigateTo`/`update`/`drawUI`/`combatRound`/`reset` 修改）、`index.html`（RPG 页面布局重构 + 物品栏/装备栏 DOM）、`styles/pixel.css`（布局样式 + 物品栏/装备栏像素风样式）、`js/i18n.js`（`rpg_equipment_title`/`rpg_inventory_title` 中英文键）。
+
+---
+
 ### 2026-07 · 7 项修复与新增功能
 
 | # | 模块 | 更新内容 |
