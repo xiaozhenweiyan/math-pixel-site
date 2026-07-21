@@ -4,3 +4,6 @@ __pycache__/
 .DS_Store
 node_modules/
 .env
+
+# GitHub Token - 高保密，禁止提交
+.gh-token
