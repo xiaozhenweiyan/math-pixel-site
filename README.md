@@ -1,3 +1,11 @@
+# Pixel Tools
+
+> A retro pixel-style pure frontend tool collection website, covering five categories: Learning, Art, Sandbox, Tools, and Entertainment. All features run 100% in the browser — no backend, no login, no network required (network is only needed for the first load; after PWA installation, it works offline).
+
+<p align="center">
+  <strong>Retro Deep-Space Pixel Theme · Bilingual (CN/EN) · PWA Offline · Responsive Design · Mouse Drag Particle Effects</strong>
+</p>
+
 # 像素风格工具网站 · Pixel Tools
 
 > 一个复古像素风格的纯前端工具集合网站，覆盖学习、艺术、沙盒、工具、娱乐五大类别，所有功能 100% 在浏览器中运行，无需后端、无需登录、无需联网（仅首次加载需要网络，PWA 安装后可离线使用）。
@@ -10,36 +18,37 @@
 
 ## Table of Contents
 
-- [Online Access](#在线访问)
-- [Project Overview](#项目简介)
-- [Core Features](#核心特性)
-- [Tool Directory](#工具目录)
-  - [Learning](#学习类-learning)
-  - [Art](#艺术类-art)
-  - [Sandbox](#沙盒类-sandbox)
-  - [Tools](#工具类-tools)
-  - [Entertainment](#娱乐类-entertainment)
-- [Prediction System (40 Methods)](#预测系统-40-种方法)
-- [Tech Stack](#技术栈)
-- [Project Structure](#项目结构)
-- [File Manifest](#文件清单)
-- [Local Development](#本地开发)
-- [Deploy to GitHub Pages](#部署到-github-pages)
-- [PWA & Service Worker Strategy](#pwa-与-service-worker-策略)
-- [Internationalization (i18n)](#国际化i18n)
-- [Tutorial System](#教程系统)
-- [Function System Parameter Dialog](#函数系统参数弹窗)
-- [Homepage Interaction](#首页交互)
-- [Keyboard Shortcuts](#键盘快捷键)
-- [Mouse Drag Particle Effects](#鼠标拖拽粒子特效)
+- [Online Access](#online-access)
+- [Project Overview](#project-overview)
+- [Core Features](#core-features)
+- [Tool Directory](#tool-directory)
+  - [Learning](#learning)
+  - [Art](#art)
+  - [Sandbox](#sandbox)
+  - [Tools](#tools)
+  - [Entertainment](#entertainment)
+- [Prediction System (40 Methods)](#prediction-system-40-methods)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [File Manifest](#file-manifest)
+- [Local Development](#local-development)
+- [Deploy to GitHub Pages](#deploy-to-github-pages)
+- [PWA & Service Worker Strategy](#pwa--service-worker-strategy)
+- [Internationalization (i18n)](#internationalization-i18n)
+- [Tutorial System](#tutorial-system)
+- [Function System Parameter Dialog](#function-system-parameter-dialog)
+- [Homepage Interaction](#homepage-interaction)
+- [Keyboard Shortcuts](#keyboard-shortcuts)
+- [Mouse Drag Particle Effects](#mouse-drag-particle-effects)
 - [MCP Server](#mcp-server)
-- [WebAssembly Acceleration](#webassembly-加速)
-- [Browser Compatibility](#浏览器兼容性)
-- [Performance & Accessibility](#性能与无障碍)
-- [Changelog](#更新日志)
-- [Contributing](#贡献)
-- [FAQ](#常见问题-faq)
+- [WebAssembly Acceleration](#webassembly-acceleration)
+- [Browser Compatibility](#browser-compatibility)
+- [Performance & Accessibility](#performance--accessibility)
+- [Changelog](#changelog)
+- [Contributing](#contributing)
+- [FAQ](#faq)
 - [License](#license)
+- [Acknowledgements](#acknowledgements)
 
 ## 目录
 
@@ -73,6 +82,967 @@
 - [贡献](#贡献)
 - [常见问题 FAQ](#常见问题-faq)
 - [License](#license)
+- [致谢](#致谢)
+
+---
+
+## Online Access
+
+- Online Demo: <https://xiaozhenweiyan.github.io/pixel-tools/>
+- GitHub Repository: <https://github.com/xiaozhenweiyan/pixel-tools>
+
+> Recommended browsers: latest Chrome / Edge / Firefox / Safari. After the first load, click the "Install" button in the browser address bar to add the site as a PWA to your desktop, after which it can be used offline.
+
+---
+
+## Project Overview
+
+Pixel Tools is a pure frontend tool collection website with a Retro Deep-Space Pixel Theme visual design. All tools are implemented with vanilla JavaScript + Canvas API, without relying on any frontend framework (React / Vue / Angular, etc.). Only the pixel art generator borrows [p5.js](https://p5js.org/) as a drawing helper library.
+
+The website includes 20+ standalone tools, distributed across 5 top-level categories:
+
+- **Learning**: Math predictor, function plotter, calculator, pixel programming (maze + neural network visualizer), 7 math learning cards
+- **Art**: Pixel art generator (8 art modes), pixel drawing editor (multi-layer + palette), pixel music synthesizer (8-bit chip music)
+- **Sandbox**: Physics simulator (Falling Sand style), AI image pixelizer
+- **Tools**: Pixel clock (clock + calendar + pomodoro timer)
+- **Entertainment**: Pixel RPG mini-game (turn-based combat)
+
+The entire project has zero backend dependencies. All data is stored in the browser's `localStorage` / `IndexedDB`. User information (nickname, avatar, background) is persisted in `localStorage` with a `pixel_user_session` cookie (max-age one year) as a registered marker, which remains after closing the browser, so there's no need to re-register on the next visit; logging out clears both `localStorage` and the cookie. Other data is destroyed when the browser is closed (unless the user actively keeps it). All image processing (pixelization, drawing export) is done entirely on the client side; images are never uploaded to any server.
+
+---
+
+## Core Features
+
+- **Retro Deep-Space Pixel UI**: Unified color palette (deep space blue `#1a1a2e`, panel purple `#2d2d44`, gold accent `#ffd700`), pixel borders (`3px solid`), hard shadows (`4px 4px 0`), monospace font (Courier New). All buttons, inputs, panels, and dialogs follow the same set of design tokens (CSS Variables), presenting the retro aesthetic of 8-bit / 16-bit era computer interfaces.
+- **Bilingual Support (i18n)**: A complete i18n system supporting `auto` / `zh` / `en` modes. `auto` follows the system language, and switching takes effect immediately without refreshing (some pages may prompt for a refresh). All visible text (buttons, prompts, tutorials, error messages) have bilingual mappings. Adding a new language only requires extending the translation table in `js/i18n.js`.
+- **PWA Offline + Installable**: All static assets are cached via Service Worker, enabling fully offline use after installation to desktop. `manifest.json` provides app icon, name, and theme color. After installation, there's no browser address bar, delivering an experience close to a native app.
+- **Responsive Design**: Desktop dual-column layout, mobile single-column adaptive, touch-friendly button sizes and spacing. All tools work properly across phone, tablet, and desktop sizes.
+- **Homepage Category Collapsing**: 5 top-level categories can be independently collapsed/expanded, with state saved to `localStorage` and auto-restored on next visit.
+- **Homepage "Recent" Quick Access**: Automatically records the 3 most recently visited tools. Auto-hides when there are no records. Supports one-click clearing.
+- **ESC Key Navigation**: Press ESC on any sub-page to go back to the previous level. Press repeatedly to return to the homepage step by step. When an input is focused, ESC prioritizes blurring the input. Page scroll position is saved when switching pages and auto-restored when returning (including ESC returns), instead of jumping to the top.
+- **Mouse Drag Particle Effects**: Dragging the mouse on the page leaves a pixel-style particle trail, at the topmost layer (`z-index: 99999`) but without blocking interaction (`pointer-events: none`). Particles have gravity, decay, and fade-out effects. Touch events on mobile also trigger this.
+- **Per-page Tutorials**: Each tool page has a "Tutorial" button that opens a page-specific usage guide, including basic operations, parameter descriptions, tips, etc. The homepage tutorial button is at the top-right of the viewport; other pages' tutorial buttons are at the bottom center of the viewport.
+- **Function System Parameter Animation**: The function system supports parameters `a, b, c, d...`. After adding a function, parameter sliders automatically appear. You can set min value, max value, and step. Click "Play Animation" to make parameters cycle automatically in a sine wave pattern, making it easy to observe the overall behavior of a function family.
+- **Adaptive Coordinate Unit Length**: The coordinate systems of the predictor and function system use a 1-2-5 nice unit tick strategy, automatically selecting the nearest standard unit length (1, 0.5, 0.2, 0.1, 2, 5, 10...) based on the zoom level, displayed at the bottom-left of the axes, auto-adjusting on zoom, always maintaining 5-10 major ticks.
+- **Pure Frontend (Zero Backend / Zero Login / Zero Data Collection)**: All computation, storage, and rendering happen in the browser. Data never leaves the device. No user system, no login/registration, no server logs, no telemetry. Closing the browser destroys data (unless the user actively keeps it).
+- **WebAssembly Acceleration** (experimental, fixed): The reaction-diffusion mode can optionally enable Wasm acceleration, using an inline JS optimized kernel approach with no external wasm file dependency, delivering 3-5x performance improvement over the pure JS version.
+- **MCP Server Integration**: Includes an MCP (Model Context Protocol) server (`mcp-server/server.py`) that wraps the calculator and predictor as MCP tools, available for direct invocation by MCP clients like TRAE, Claude Desktop, Cursor, etc., letting AI assistants directly use this site's capabilities.
+- **Pixel-style Custom Dialogs**: All prompts, confirmations, and parameter inputs use custom `.pixel-dialog` pixel-style dialogs with deep space blue + gold border + Courier New + hard shadows, replacing the browser's native `prompt()` / `alert()` for a unified visual style.
+- **Zero-framework Vanilla JS**: Apart from p5.js (used only by the pixel art generator), there are no third-party frontend frameworks. All JS uses ES5-compatible syntax + IIFE pattern, loading fast, easy to debug, and directly callable in DevTools Console via global functions.
+- **Rich Content**: Built-in 8 pixel art modes, 7 math learning cards, 40 sequence prediction methods, 5 function fitting demos (funcfit / overfit / offsetfit + neural network + regression), dungeon-style pixel RPG, 4 maze algorithms, 8-bit music synthesizer, 20+ tools.
+
+---
+
+## Tool Directory
+
+### Learning
+
+#### PIXEL MATH
+
+Entry point for the math tool collection, containing three core tools:
+
+- **Prediction System PIXEL PREDICTOR**: Input a number sequence, use 40 mathematical methods + neural network to predict the next value. Supports weight fusion, long-term training, backtest validation, JSON/CSV export.
+- **Function System PIXEL FUNCTION**: Plot 2D/3D function graphs. Supports parameter sliders, animation playback, mouse drag panning, scroll wheel zoom, automatic unit length adjustment.
+- **Calculator System PIXEL CALCULATOR**: Pixel-style calculator supporting arithmetic, expression evaluation, trigonometric functions, logarithms, exponentiation, parentheses, constants (pi, e), DEG/RAD toggle, operation step display, history.
+
+#### PIXEL PROGRAMMING
+
+Algorithm visualization tool collection:
+
+- **Pixel Maze PIXEL MAZE**: Generates mazes using 4 algorithms (Recursive Backtracker, Prim, Kruskal, Eller). Supports BFS shortest path solving animation, adjustable rows/columns and wall thickness, exportable as pixel image.
+- **Neural Network Visualizer NN VISUALIZER**: Visualizes neural network training process, real-time display of forward/backward propagation, weight changes, loss curves, decision boundaries. Supports XOR, sine fitting, classification and other datasets.
+
+#### LEARNING SYSTEM
+
+Math learning card collection, helping understand math concepts through animation and interaction:
+
+- **Arithmetic ARITHMETIC**: Basic addition, subtraction, multiplication, division, with block array animation demonstrating the operation process.
+- **Mixed Arithmetic MIXED ARITHMETIC**: Four-operation mixed arithmetic with parentheses, demonstrating operation priority.
+- **Fraction FRACTION**: Fraction addition/subtraction/multiplication/division, reduction, common denominator animation.
+- **Decimal DECIMAL**: Decimal operations, conversion to/from fractions animation.
+- **Equation EQUATION**: Linear/quadratic equations in one variable, balance scale animation solving.
+- **Geometry GEOMETRY**: Area/perimeter/volume formulas, interactive shapes.
+- **Speed Challenge SPEED CHALLENGE**: 60-second timed quiz, local leaderboard.
+
+### Art
+
+#### PIXEL DRAWING
+
+- **Pixel Art Generator PIXEL ART**: Generates pixel art based on seeded random algorithms, with 8 art modes (Flow Field, Particles, Mosaic, Spiral, Fractal Tree, Voronoi tessellation, Wave interference, Reaction-Diffusion). Adjustable resolution, density, hue, recursion depth and other parameters. Supports animation playback and PNG export. Same seed + same parameters = same image, convenient for reproduction.
+- **Pixel Drawing Editor PIXEL DRAWING EDITOR**: Pixel-by-pixel hand-drawing creation. Supports brush, eraser, fill, eyedropper, line, rectangle, circle and other tools, multi-layer operations, NES / GameBoy / CGA retro palettes + custom colors. Adjustable canvas size, PNG export. Canvas CSS display size increased from max-width 512px to 768px, logical pixel options (16 / 32 / 64 / 128) unchanged, for a clearer creative experience.
+
+#### PIXEL MUSIC
+
+- **Pixel Music Synthesizer PIXEL MUSIC SYNTH**: 8-bit chip music creation tool, multi-track sequence editor (melody, bass, drums), square wave / triangle wave / sawtooth wave / noise and other timbres, adjustable BPM, piano keyboard input, oscilloscope visualization, WAV export.
+
+### Sandbox
+
+- **Physics Simulator PHYSICS SANDBOX**: Pixel-style 2D physics sandbox, similar to Falling Sand Game. Simplified to 3 substances (EMPTY eraser / WATER / HYDROGEN), with water's falling + lateral flow physics fully preserved. Added hydrogen: floats upward (opposite to gravity), can rise through water, invisible by default. Added "Gas" button: click to toggle hydrogen visibility (when visible, appears as semi-transparent light blue). Adjustable brush size, play/pause control.
+- **AI Image Pixelizer IMAGE PIXELIZER**: Upload any image and automatically convert it to pixel style. Adjustable pixel block size, palette (NES / GameBoy / CGA / custom), color count, real-time preview, download pixelized image. All processing is done purely on the frontend; images are not uploaded to any server.
+
+### Tools
+
+- **Pixel Clock PIXEL CLOCK**: Retro pixel-style clock, calendar, and pomodoro timer tool.
+  - Digital clock: Real-time display of current time, multiple pixel font styles.
+  - Calendar: Monthly view, click dates to add event markers.
+  - Pomodoro timer: 25-minute work + 5-minute break cycle to improve focus.
+
+### Entertainment
+
+- **Pixel RPG PIXEL RPG**: Pixel RPG dungeon maze adventure — a masked figure in black explores dungeons, with turn-based combat, wall torches lighting the way, slimes as the main enemies, and a downward corridor leading to the next floor.
+  - Arrow keys / WASD to control character movement in the dungeon, or click/touch any movable cell on the map for auto-navigation.
+  - Click map for auto-navigation (BFS pathfinding): Click/touch any movable cell on the map, and the player automatically moves cell by cell along the BFS shortest path. Supports mobile touch and desktop mouse. Click a monster to pathfind to an adjacent cell and auto-attack; if a monster blocks the path, the player stops to let you decide.
+  - **Wiki Encyclopedia**: Click to view game documentation (HP/EXP/ATK/DEF meanings, operation guide, item catalog, monster mechanics).
+  - **Floor System**: The dungeon is counted by floors; entering the exit goes to the next floor.
+  - **7-slot Equipment System**: Left hand, right hand, head, body, legs, feet, accessory — 7 equipment slots in total.
+  - **8 Items**: Wooden sword, Recovery Potion I, Leather helmet, Leather armor, Leather leggings, Leather boots, Experience Gem I, Attack Ring. Each item has a unique pixel art icon (canvas-drawn).
+  - **Inventory Interaction**: Click an item cell to select and view details (attributes/description). Consumables can be used, equipment can be equipped/unequipped. Click two cells to swap items. Click outside to deselect.
+  - Torches on corridor walls illuminate the field of view, creating a dim dungeon atmosphere.
+  - Encountering enemies like slimes triggers turn-based combat, where you can choose attack, skill, item, and other commands.
+  - Defeating enemies grants experience points; leveling up improves attributes. Chests drop random items.
+  - 8-bit sound effects.
+
+---
+
+## Prediction System (40 Methods)
+
+The prediction system (PIXEL PREDICTOR) has 40 built-in mathematical prediction methods, fused by weight to produce the final prediction result. All methods are computed on the client side with no backend calls.
+
+| # | ID | Method | Description |
+|---|----|--------|-------------|
+| 1 | `naive` | Naive | Uses the last value as the prediction |
+| 2 | `seasonal_naive` | Seasonal Naive | Uses the value from the previous cycle |
+| 3 | `drift` | Drift | Adds average change trend to the naive method |
+| 4 | `mean` | Mean | Average of all sequence values |
+| 5 | `median` | Median | Median of all sequence values |
+| 6 | `sma` | Simple Moving Average (SMA) | Simple moving average |
+| 7 | `wma` | Weighted Moving Average (WMA) | Weighted moving average (higher weight for recent values) |
+| 8 | `ses` | Simple Exponential Smoothing (SES) | Simple exponential smoothing |
+| 9 | `holt` | Holt Linear | Holt's linear trend method |
+| 10 | `holt_winters` | Holt-Winters | Holt-Winters seasonal trend method |
+| 11 | `linear` | Linear Regression | Least squares linear regression |
+| 12 | `poly2` | Polynomial Regression Poly2 | Quadratic polynomial fitting |
+| 13 | `poly3` | Polynomial Regression Poly3 | Cubic polynomial fitting |
+| 14 | `ar1` | Autoregression AR(1) | First-order autoregression |
+| 15 | `ar2` | Autoregression AR(2) | Second-order autoregression |
+| 16 | `geometric` | Geometric Growth | Geometric series growth |
+| 17 | `diff1` | First-order Diff Extrapolation Diff1 | First-order difference extrapolation |
+| 18 | `diff2` | Second-order Diff Extrapolation Diff2 | Second-order difference extrapolation |
+| 19 | `fibonacci` | Fibonacci Golden Ratio | Fibonacci golden ratio |
+| 20 | `fourier` | Fourier Extrapolation | Fourier series extrapolation |
+| 21 | `seasonal_naive3` | Seasonal Naive(3) | Seasonal naive with period 3 |
+| 22 | `exp_smooth_03` | SES-0.3 | Exponential smoothing with α=0.3 |
+| 23 | `exp_smooth_07` | SES-0.7 | Exponential smoothing with α=0.7 |
+| 24 | `sma5` | SMA-5 | 5-point simple moving average |
+| 25 | `poly4` | Polynomial Regression Poly4 | Quartic polynomial fitting |
+| 26 | `ar3` | Autoregression AR(3) | Third-order autoregression |
+| 27 | `harmonic_mean` | Harmonic Mean | Harmonic mean |
+| 28 | `cagr` | CAGR | Compound annual growth rate |
+| 29 | `log_linear` | Log-Linear Regression | Linear regression after log transform |
+| 30 | `weighted_last` | Weighted-Last | Last-weighted average |
+| 31 | `diff_extrap` | Diff Extrap | Difference extrapolation |
+| 32 | `weighted_median` | Weighted Median | Weighted median |
+| 33 | `recursive_avg` | Recursive Avg | Recursive average |
+| 34 | `sign_preserving` | Sign-Preserving | Sign-preserving prediction |
+| 35 | `second_order` | Second Order | Second-order trend extrapolation |
+| 36 | `moving_median` | Moving Median | Moving median |
+| 37 | `triple_smooth` | Triple Smooth | Triple smoothing |
+| 38 | `symmetric_proj` | Symmetric Proj | Symmetric projection |
+| 39 | `ratio_diff` | Ratio Diff | Ratio differencing |
+| 40 | `abs_log_linear` | Abs Log-Lin | Absolute value log-linear |
+
+Additionally, there are **Neural Network Prediction** (standalone, not part of the fusion), **Overfitting Algorithm** (standalone, not part of the fusion), **Offset Algorithm** (standalone, not part of the fusion), and **Function Fitting** (with R² evaluation).
+
+Weight modes supported:
+- **Backtest Weights**: Leave-one-out backtest MAPE de-normalized weights; lower error means higher weight.
+- **Uniform Weights**: All methods have equal weight.
+
+---
+
+## Tech Stack
+
+- **Vanilla JavaScript**: No frontend frameworks (React / Vue / Angular), using only ES5-compatible syntax for maximum compatibility.
+- **Canvas 2D API**: All drawing (charts, functions, pixel art, physics simulation) uses the Canvas 2D API.
+- **Web Audio API**: The pixel music synthesizer uses Web Audio API for real-time 8-bit timbre synthesis.
+- **Service Worker + Cache API**: PWA offline caching, using Network-First strategy to ensure users get the latest version.
+- **CSS Variables**: Unified palette and design token management.
+- **p5.js** (used only by the pixel art generator): As a drawing helper library.
+- **WebAssembly** (experimental): Wasm-accelerated version of the reaction-diffusion mode, generated by Emscripten compiling C source code.
+- **localStorage**: Saves user settings (nickname, avatar, background, language, category collapse state, recent tools, speed challenge leaderboard, etc.). User information (nickname, avatar, background) is persisted in localStorage (changed from sessionStorage), remaining after closing the browser; a cookie `pixel_user_session` (max-age one year) is also set as a registered marker.
+- **IndexedDB / Blob URL**: Saves avatar and background images (storing base64 directly in localStorage would exceed limits).
+- **GitHub Actions**: Automatic deployment to GitHub Pages.
+
+---
+
+## Project Structure
+
+```
+pixel-tools/
+├── index.html                  # 主页面（包含所有页面 div，通过 hidden 类切换）
+├── styles/
+│   └── pixel.css               # 全局样式（CSS Variables + 像素风组件）
+├── js/
+│   ├── app.js                  # 主应用逻辑（页面切换、历史栈、首页增强、教程系统）
+│   ├── i18n.js                 # 国际化（中英文双语，含每页专属教程内容）
+│   ├── mouse-trails.js         # 鼠标拖拽粒子特效（最顶层 canvas，pointer-events: none）
+│   ├── expression-parser.js    # 表达式解析（AST，用于计算器和函数系统）
+│   ├── predictors.js           # 40 种序列预测方法
+│   ├── weights.js              # 权重计算 + 回测（backtest / computeWeights / ensemblePredict）
+│   ├── nn.js                   # 神经网络（含增量训练、长期训练模式）
+│   ├── funcfit.js              # 函数拟合（带 R² 评估）
+│   ├── overfit.js              # 过拟合算法（独立，不参与融合）
+│   ├── offsetfit.js            # 偏移算法（独立，不参与融合）
+│   ├── chart.js                # 折线图 + 权重条形图（自制像素风滚动条 + 缩放按钮）
+│   ├── function-plotter.js     # 2D 函数绘制（坐标系、单位长度、参数滑动条、动画）
+│   ├── function-3d.js          # 3D 函数渲染（z=f(x,y)，鼠标旋转视角）
+│   ├── math-cards.js           # 数学学习卡片（四则运算 + 混合运算）
+│   ├── math-cards-ext.js       # 数学卡片扩展（分数 / 小数 / 方程 / 几何 / 速算）
+│   ├── maze-generator.js       # 迷宫生成器（4 种算法 + BFS 求解动画）
+│   ├── nn-visualizer.js        # 神经网络可视化（前向/反向传播、损失曲线、决策边界）
+│   ├── pixel-art.js            # 像素艺术生成器（8 种艺术模式，依赖 p5.js）
+│   ├── pixel-drawing-editor.js # 像素绘图编辑器（多图层 + 调色板 + 工具栏）
+│   ├── pixel-music.js          # 像素音乐合成器（Web Audio API + 音序器 + 示波器）
+│   ├── physics-sandbox.js      # 物理模拟器（Falling Sand 风格，元素互动）
+│   ├── image-pixelizer.js      # 图像像素化（调色板量化 + 颜色限制）
+│   ├── pixel-clock.js          # 像素时钟（时钟 + 日历 + 番茄钟）
+│   └── pixel-rpg.js            # 像素 RPG（回合制战斗 + 升级）
+├── wasm/
+│   ├── reaction-diffusion.c    # 反应扩散 C 源码（Gray-Scott 模型）
+│   └── build.sh                # Emscripten 编译脚本
+├── mcp-server/                 # MCP Server（FastMCP + Python）
+│   ├── server.py               # 主服务（calculate / predict_sequence / list_predictors）
+│   ├── requirements.txt        # 依赖（mcp）
+│   └── README.md               # MCP Server 文档
+├── icons/
+│   ├── icon-192.png            # PWA 图标 192px
+│   └── icon-512.png            # PWA 图标 512px
+├── .github/
+│   └── workflows/
+│       └── deploy.yml          # GitHub Actions 自动部署到 Pages
+├── service-worker.js           # PWA Service Worker（Network-First 策略）
+├── manifest.json               # PWA Manifest
+├── .gitignore
+└── README.md                   # 本文档
+```
+
+---
+
+## File Manifest
+
+Detailed explanation of each source file's purpose, key functions, and dependencies, helping contributors quickly locate code.
+
+### Root Directory Files
+
+#### `index.html`
+- **Purpose**: Main entry HTML, containing the DOM structure for all site pages. Each tool page is defined via `<div class="page" id="xxx-page">`, with display toggled using the `hidden` class. Synchronously loads global scripts like `js/i18n.js`, `js/mouse-trails.js`, as well as tool-specific scripts.
+- **Key Content**: Homepage landing-page, 5 category entries, 20+ tool page divs, settings page, tutorial modal, Toast container, mouse particle canvas.
+- **Dependencies**: All `js/*.js`, `styles/pixel.css`, `manifest.json`, `service-worker.js`.
+
+#### `service-worker.js`
+- **Purpose**: PWA Service Worker, responsible for offline caching and version management. Uses Network-First strategy to ensure users get the latest version on every refresh, falling back to cache when offline.
+- **Key Functions / Events**: `install` (precache key resources + `skipWaiting`), `activate` (delete old caches + `clients.claim` + notify `SW_UPDATED`), `fetch` (route strategy by resource type).
+- **Dependencies**: `CACHE_VERSION` constant, `CACHE_NAME`, `PRECACHE_URLS` list.
+
+#### `manifest.json`
+- **Purpose**: PWA manifest, declaring app name, icons, theme color, display mode, etc., enabling the site to be recognized by browsers as an installable PWA.
+- **Key Fields**: `name`, `short_name`, `icons` (192/512px), `theme_color` (deep space blue), `background_color`, `display: standalone`, `start_url`.
+- **Dependencies**: `icons/icon-192.png`, `icons/icon-512.png`.
+
+### `js/` Directory
+
+#### `js/app.js`
+- **Purpose**: Main application entry, coordinating page switching, history stack, homepage enhancements, settings page, parameter panels, calculator, tutorial system, Toast prompts, etc. It is the "control center" of the entire project.
+- **Key Functions**: `navigateTo(pageId)` (page switching + history stack), `goBack()` (ESC return to previous level), `showToast(msg)` (custom pixel-style Toast), `showTutorial(pageId)` (popup tutorial for the page), `initSettings()` (settings panel initialization), `initApp()` (application entry).
+- **Dependencies**: `js/i18n.js` (translations), `js/mouse-trails.js` (particles), `js/predictors.js` + `js/weights.js` + `js/chart.js` (prediction system combination), `js/expression-parser.js` (calculator), `js/function-plotter.js` (function system).
+
+#### `js/i18n.js`
+- **Purpose**: Internationalization module, containing Chinese/English translation tables + translation functions. All elements tagged with `data-i18n` are auto-updated; the translation table also includes page-specific tutorial content.
+- **Key Functions**: `i18n.t(key, params)` (with parameter interpolation), `i18n.setMode(mode)` (switch `auto`/`zh`/`en`), `i18n.apply()` (batch update DOM), `i18n.getMode()`.
+- **Dependencies**: No external dependencies; listens for `languagechange` event for other components to respond.
+
+#### `js/mouse-trails.js`
+- **Purpose**: Mouse drag particle effects, generating pixel-style particle trails along the mouse trajectory, with gravity, decay, and fade-out effects. At the topmost layer `z-index: 99999` but `pointer-events: none`, not blocking interaction.
+- **Key Functions**: `initMouseTrails()`, `spawnParticle(x, y)`, `updateParticles()` (`requestAnimationFrame` loop), `resizeCanvas()`.
+- **Dependencies**: `#mouse-trails-canvas` DOM element (provided by `index.html`).
+
+#### `js/pixel-art.js`
+- **Purpose**: Pixel art generator, 8 art modes (flow field, particles, mosaic, spiral, fractal tree, Voronoi, wave interference, reaction-diffusion), seeded random for reproducibility, optional Wasm acceleration kernel.
+- **Key Functions**: `setup()` / `draw()` (p5.js lifecycle), `generateFlowField()`, `generateReactionDiffusion()`, `loadWasmModule()` (initialize inline JS optimized kernel), `exportPNG()`.
+- **Dependencies**: p5.js (CDN loaded), `js/i18n.js`.
+
+#### `js/pixel-drawing-editor.js`
+- **Purpose**: Pixel drawing editor, pixel-by-pixel hand-drawing creation. Supports brush, eraser, fill, eyedropper, line, rectangle, circle and other tools, multi-layer operations, NES / GameBoy / CGA retro palettes + custom colors.
+- **Key Functions**: `initDrawingEditor()`, `setTool(tool)`, `drawPixel(x, y, color)`, `floodFill()`, `mergeLayers()`, `exportPNG()`.
+- **Dependencies**: Canvas 2D API, `js/i18n.js`.
+
+#### `js/pixel-music.js`
+- **Purpose**: Pixel music synthesizer, 8-bit chip music creation tool. Multi-track sequence editor (melody, bass, drums), square wave / triangle wave / sawtooth wave / noise and other timbres, adjustable BPM, piano keyboard input, oscilloscope visualization, WAV export.
+- **Key Functions**: `initMusicSynth()`, `playNote(freq, duration)`, `playSequence()`, `renderOscilloscope()`, `exportWAV()`.
+- **Dependencies**: Web Audio API, `js/i18n.js`.
+
+#### `js/expression-parser.js`
+- **Purpose**: Expression parser, parsing string expressions into AST and evaluating them. Also supports extracting parameter symbols from functions; it is the shared infrastructure for the calculator and function system.
+- **Key Functions**: `parseExpression(str)` (returns AST root node), `evaluateAST(node, scope)` (evaluate by scope), `extractVariables(node)` (extract parameter symbols, filtering reserved words `x`/`pi`/`e`/`sin`/`cos`/`tan`/`log`/`sqrt`/`abs`/`exp`/`ln`), `tokenize(str)`.
+- **Dependencies**: No external dependencies, pure algorithm implementation.
+
+#### `js/function-plotter.js`
+- **Purpose**: Function system 2D plotting engine, plotting `y=f(x, a, b, c...)`. Includes coordinate system rendering, 1-2-5 nice unit ticks, scroll wheel zoom, drag panning, parameter sliders, animation playback.
+- **Key Functions**: `drawAxes()`, `plotFunction(fn, params)`, `zoomCanvas(factor)`, `panCanvas(dx, dy)`, `startAnimation()` (parameters cycle in sine wave), `addFunction(expr)`.
+- **Dependencies**: `js/expression-parser.js`, Canvas 2D API, `js/i18n.js`.
+
+#### `js/function-3d.js`
+- **Purpose**: Function system 3D plotting, plotting `z=f(x, y)` surfaces. Mouse drag to rotate view, scroll wheel zoom, supports parameterization.
+- **Key Functions**: `init3D()`, `drawSurface()`, `rotateView(dx, dy)`, `project3D(x, y, z)`.
+- **Dependencies**: `js/expression-parser.js`, Canvas 2D API.
+
+#### `js/chart.js`
+- **Purpose**: Prediction system line chart + weight bar chart rendering engine. Adaptive ticks, scroll wheel zoom, drag panning, custom pixel-style scrollbar and zoom buttons.
+- **Key Functions**: `setupCanvas()`, `drawLineChart(series, predictions)`, `drawWeightBars(weights, labels)`, `computeNiceUnit(range)` (1-2-5 tick algorithm), `zoomChart(factor)`.
+- **Dependencies**: Canvas 2D API, `js/i18n.js`.
+
+#### `js/predictors.js`
+- **Purpose**: Collection of 40 sequence prediction method implementations, the algorithmic core of the prediction system. Covers naive method, moving average, exponential smoothing, regression, autoregression, Fourier, difference extrapolation, etc.
+- **Key Functions**: `predict_naive(series)`, `predict_sma(series, window)`, `predict_ses(series, alpha)`, `predict_holt_winters(series, ...)`, `predict_poly2()` / `predict_poly3()` / `predict_poly4()`, `predict_fourier()`, `predict_ar1()` / `predict_ar2()` / `predict_ar3()`, and the unified `predictors` array (each item contains `id` / `name` / `fn`).
+- **Dependencies**: Pure algorithm, no external dependencies.
+
+#### `js/weights.js`
+- **Purpose**: Prediction weight calculation and backtesting. Based on leave-one-out backtest MAPE de-normalized to get each method's weight, then performs multi-method fusion prediction.
+- **Key Functions**: `backtest(series, predictorFn)` (leave-one-out backtest → MAPE), `computeWeights(series, predictors)` (de-normalized weights), `uniformWeights(n)`, `ensemblePredict(series, predictors, weights, steps)` (fusion prediction), `computeMethodStats()`.
+- **Dependencies**: `js/predictors.js`.
+
+#### `js/nn.js`
+- **Purpose**: Neural network prediction implementation, including incremental training and long-term training modes. Independent from the 40 methods, not part of the fusion, serving as a comparison showcase.
+- **Key Functions**: `trainNN(series, options)`, `predictNN(model, steps)`, `forwardPass()`, `backwardPass()`, `saveModel()` / `loadModel()`.
+- **Dependencies**: Pure JS matrix operations, no third-party libraries.
+
+#### `js/nn-visualizer.js`
+- **Purpose**: Neural network visualization tool, real-time display of forward/backward propagation, weight changes, loss curves, decision boundaries. Supports XOR, sine fitting, classification and other datasets.
+- **Key Functions**: `initVisualizer()`, `drawNetwork()`, `drawDecisionBoundary()`, `trainStep()`, `drawLossCurve()`.
+- **Dependencies**: Canvas 2D API, `js/nn.js` (shared training logic).
+
+#### `js/funcfit.js`
+- **Purpose**: Function fitting demo module, performing polynomial / exponential / logarithmic fitting on input sequences, and computing R² to evaluate goodness of fit.
+- **Key Functions**: `fitPolynomial(series, degree)`, `computeR2(series, fitFn)`, `drawFitCurve()`, `evaluateFit(x)`.
+- **Dependencies**: Canvas 2D API, `js/chart.js` (shared drawing).
+
+#### `js/overfit.js`
+- **Purpose**: Overfitting demo module, runs independently and is not part of the fusion. Demonstrates the phenomenon where high-degree polynomials fit training points perfectly but generalize poorly.
+- **Key Functions**: `fitHighOrder(series, degree)`, `drawOverfitCurve()`, `computeGeneralizationError()`.
+- **Dependencies**: Canvas 2D API, `js/chart.js`.
+
+#### `js/offsetfit.js`
+- **Purpose**: Offset fitting demo module, runs independently and is not part of the fusion. Attempts to overlay a constant offset on each base method to find the best correction term.
+- **Key Functions**: `fitWithOffset(series, predictorFn)`, `findBestOffset()`, `drawOffsetCurve()`.
+- **Dependencies**: `js/predictors.js`, Canvas 2D API.
+
+#### `js/math-cards.js`
+- **Purpose**: Math learning card main module, covering arithmetic + mixed arithmetic. Helps understand basic concepts through block array animations and operation step displays.
+- **Key Functions**: `initArithmeticCard()`, `initMixedArithmeticCard()`, `renderBlockAnimation()`, `checkAnswer()`.
+- **Dependencies**: Canvas 2D API, `js/i18n.js`.
+
+#### `js/math-cards-ext.js`
+- **Purpose**: Math learning card extension module, covering 5 card types: fraction, decimal, equation, geometry, speed challenge.
+- **Key Functions**: `initFractionCard()`, `initDecimalCard()`, `initEquationCard()`, `initGeometryCard()`, `initSpeedChallenge()` (includes 60-second timer + local leaderboard).
+- **Dependencies**: Canvas 2D API, `js/i18n.js`, `localStorage` (speed challenge leaderboard).
+
+#### `js/maze-generator.js`
+- **Purpose**: Maze generator, supporting 4 algorithms (Recursive Backtracker, Prim, Kruskal, Eller), adjustable rows/columns and wall thickness, BFS shortest path solving animation, pixel image export.
+- **Key Functions**: `generateMaze(rows, cols, algorithm)`, `solveBFS(maze, start, end)`, `drawMaze()`, `animateSolution(path)`, `exportMazePNG()`.
+- **Dependencies**: Canvas 2D API, `js/i18n.js`.
+
+#### `js/physics-sandbox.js`
+- **Purpose**: Physics sandbox simulator, similar to Falling Sand Game. Simplified to 3 substances (EMPTY eraser / WATER / HYDROGEN), with water's falling + lateral flow physics fully preserved; added hydrogen that floats upward (opposite to gravity), can rise through water, invisible by default; added "Gas" button to toggle hydrogen visibility (semi-transparent light blue when visible).
+- **Key Functions**: `initPhysicsSandbox()`, `step()` (update grid per frame), `paintCell(x, y, element)`, `interactCells()`, `setBrushSize(n)`, `toggleGasVisibility()` (toggle hydrogen visibility).
+- **Dependencies**: Canvas 2D API, `js/i18n.js`.
+
+#### `js/image-pixelizer.js`
+- **Purpose**: AI image pixelizer tool, uploads images and automatically converts them to pixel style. Adjustable pixel block size, palette (NES / GameBoy / CGA / custom), color count, real-time preview, download pixelized image. All processing is done purely on the frontend.
+- **Key Functions**: `handleImageUpload(file)`, `pixelizeImage(img, blockSize, palette)`, `applyPalette(colors, palette)`, `exportPixelizedPNG()`.
+- **Dependencies**: Canvas 2D API, `URL.createObjectURL`, `js/i18n.js`.
+
+#### `js/pixel-clock.js`
+- **Purpose**: Pixel clock tool, including three modes: digital clock, monthly calendar view, and pomodoro timer.
+- **Key Functions**: `initClock()`, `renderDigitalClock()`, `renderCalendar()`, `startPomodoro()` (25-minute work + 5-minute break cycle), `addCalendarEvent(date, label)`.
+- **Dependencies**: Canvas 2D API, `js/i18n.js`, `localStorage` (event markers).
+
+#### `js/pixel-rpg.js`
+- **Purpose**: Pixel RPG dungeon maze adventure mini-game. A masked figure in black explores dungeons, with turn-based combat, wall torches lighting the way, slimes as the main enemies, and a downward corridor leading to the next floor. Supports clicking/touching any movable cell on the map, with the player automatically moving cell by cell along the BFS shortest path (compatible with touch and mouse pointerdown events); keyboard operation can interrupt auto-navigation.
+- **Key Functions**: `initRPG()`, `generateDungeon(level)`, `handlePlayerMove(dx, dy)`, `findPathBFS(start, end)` (BFS pathfinding), `autoNavigate(path)` (auto cell-by-cell movement), `startBattle(enemy)`, `takeTurn(action)`, `nextFloor()`.
+- **Dependencies**: Canvas 2D API, Web Audio API (8-bit sound effects), `js/i18n.js`.
+
+### `styles/` Directory
+
+#### `styles/pixel.css`
+- **Purpose**: Global stylesheet, defining all pixel-style visual specs. Includes CSS Variables design tokens (palette, spacing, fonts), button / input / panel / dialog / Toast / tutorial modal / scrollbar and other component styles, responsive breakpoints, `prefers-reduced-motion` adaptation, `focus-visible` focus styles.
+- **Key Selectors**: `:root` (CSS Variables), `.pixel-btn`, `.pixel-input`, `.pixel-dialog`, `.tutorial-btn`, `.toast`, `canvas` (global canvas reset rules), `#mouse-trails-canvas` (particle canvas exception).
+- **Dependencies**: Directly `<link>`-ed by `index.html`.
+
+### `wasm/` Directory
+
+#### `wasm/reaction-diffusion.c`
+- **Purpose**: C source code for the Gray-Scott reaction-diffusion model, originally used to compile to WebAssembly via Emscripten to accelerate the reaction-diffusion mode. Currently switched to an inline JS optimized kernel approach; this source code is retained as an algorithm reference.
+- **Key Functions**: `simulate_step(u, v, du, dv, width, height, params)` (single iteration step), `init_grid()`.
+- **Dependencies**: Standard C library; compilation output was previously directed to `js/reaction_diffusion.wasm`.
+
+#### `wasm/build.sh`
+- **Purpose**: Emscripten compilation script, calling `emcc` to compile `reaction-diffusion.c` into a WebAssembly module. Currently retained as an optional compilation path; the runtime no longer depends on the compilation output.
+- **Key Command**: `emcc reaction-diffusion.c -O3 -s WASM=1 -o ../js/reaction_diffusion.wasm ...`.
+- **Dependencies**: Emscripten SDK (emsdk).
+
+### `mcp-server/` Directory
+
+#### `mcp-server/server.py`
+- **Purpose**: MCP (Model Context Protocol) server, wrapping the site's calculator and predictor as MCP tools, available for direct invocation by MCP clients like TRAE, Claude Desktop, Cursor, etc., letting AI assistants remotely use this site's capabilities.
+- **Key Functions / Tools**: `calculate(expression, angle_mode?)` (restricted `eval` + character whitelist), `predict_sequence(series, count?, weight_mode?)` (4 basic method fusion), `list_predictors()` (list available prediction methods).
+- **Dependencies**: FastMCP (`mcp` package, see `requirements.txt`), Python standard library `math`.
+
+#### `mcp-server/requirements.txt`
+- **Purpose**: Python dependency list, recording the pip packages needed to run the MCP Server.
+- **Key Content**: `mcp>=1.x` (FastMCP SDK).
+- **Dependencies**: Installed via `pip install -r requirements.txt`.
+
+#### `mcp-server/README.md`
+- **Purpose**: MCP Server dedicated documentation, explaining installation, configuration, and integration with various MCP clients (TRAE / Claude Desktop / Cursor).
+- **Key Content**: Installation commands, client configuration JSON examples, security notes.
+- **Dependencies**: References the tools exposed by `server.py`.
+
+---
+
+## Local Development
+
+This project is a pure static website with no build step required. Open it with any static server.
+
+```bash
+# 1. 克隆仓库
+git clone https://github.com/xiaozhenweiyan/pixel-tools.git
+cd pixel-tools
+
+# 2. 启动静态服务器（任选其一）
+
+# 方式 A：Python 3
+python3 -m http.server 8000
+
+# 方式 B：Node.js（需先 npm i -g serve）
+serve -p 8000
+
+# 方式 C：VS Code Live Server 扩展（右键 index.html → Open with Live Server）
+
+# 3. 在浏览器访问
+# http://localhost:8000
+```
+
+> **Important**: You must access via `http://localhost`, not directly with the `file://` protocol. Reasons:
+> 1. Service Worker can only be registered under `http://` or `https://` protocols.
+> 2. Some browsers restrict `localStorage` and ES Modules under the `file://` protocol.
+> 3. CDN resources like p5.js may fail to load under `file://`.
+
+### Modification and Debugging
+
+- All JS uses IIFE pattern, mounted on the `window` global, directly callable in the browser DevTools Console.
+- No need to refresh after modifying CSS (some browsers support hot reload); refreshing the page is needed after modifying JS.
+- After modifying the Service Worker, you need to close all tabs and reopen them, or refresh once after the new SW activates (automatically handled via `skipWaiting` + `clients.claim` in `service-worker.js`).
+- Debugging Service Worker: Chrome DevTools → Application → Service Workers → check "Update on reload".
+
+---
+
+## Deploy to GitHub Pages
+
+This project is automatically deployed via GitHub Actions. Each push to the `main` branch triggers deployment.
+
+### Automatic Deployment Configuration
+
+The `.github/workflows/deploy.yml` configuration is as follows:
+
+- **Trigger**: push to `main` branch, or manual workflow_dispatch.
+- **Permissions**: `pages: write` + `id-token: write` (required for GitHub Pages deployment).
+- **Concurrency Control**: `group: pages`; new deployments cancel ongoing old deployments.
+- **Steps**: checkout → configure-pages → upload-artifact (path: `.`) → deploy-pages.
+
+### Manual Deployment
+
+If you want to manually deploy to your own GitHub Pages:
+
+1. Fork this repository.
+2. Go to repository Settings → Pages → Source: select "GitHub Actions".
+3. Push code to the `main` branch and wait for Actions to complete, then access `https://<your-username>.github.io/pixel-tools/`.
+
+### Custom Domain
+
+If you need to use a custom domain, add a `CNAME` file in the repository root (content is the domain name), and configure a CNAME record at your DNS provider pointing to `<username>.github.io`.
+
+---
+
+## PWA & Service Worker Strategy
+
+`service-worker.js` uses a **Network-First** strategy to ensure users get the latest version on every refresh:
+
+| Resource Type | Strategy | Description |
+|---------------|----------|-------------|
+| HTML documents | Network-First | Network first, fall back to cache when offline |
+| JS / CSS / Images | Network-First | Network first, avoiding SWR causing two refreshes to take effect |
+| Third-party CDN (p5.js) | Cache-First | Cross-origin resources cache first, offline fallback |
+
+### Cache Version Management
+
+`CACHE_VERSION` must be upgraded after each deployment (currently `v13`). When the new SW activates, all old version caches are automatically deleted:
+
+```javascript
+const CACHE_VERSION = 'v13';
+const CACHE_NAME = 'pixel-tools-' + CACHE_VERSION;
+```
+
+### SW Update Flow
+
+1. The browser detects byte changes in `service-worker.js` and downloads the new version in the background.
+2. New SW installs (`install` event) → precaches key resources → `self.skipWaiting()` to take over immediately.
+3. New SW activates (`activate` event) → deletes all old caches → `self.clients.claim()` to immediately control all clients → notifies all clients `SW_UPDATED`.
+4. Clients receiving the `SW_UPDATED` message can prompt users to refresh (some pages auto-refresh).
+
+### Debugging Service Worker
+
+- Chrome DevTools → Application → Service Workers
+- Check "Update on reload": re-downloads SW on every refresh.
+- Check "Bypass for network": temporarily bypass SW (for troubleshooting).
+- "Unregister": unregisters SW (for a complete reset).
+
+---
+
+## Internationalization (i18n)
+
+`js/i18n.js` implements a complete Chinese/English bilingual system. All user-visible text across the site (buttons, labels, prompts, error messages, tutorials) is connected to the i18n system:
+
+- **Three Modes**: `auto` (follow system) / `zh` (Chinese) / `en` (English), saved to `localStorage`.
+- **Translation Function**: `i18n.t(key, params)`, supports parameter interpolation (e.g., `t('toast_welcome', { name: 'Guest' })` → `Welcome, Guest!`).
+- **Auto Application**: Supports `data-i18n`/`data-i18n-title`/`data-i18n-aria-label` attributes for auto-updating. All elements with `data-i18n` attribute auto-update `innerHTML`; elements with `data-i18n-placeholder` update `placeholder`.
+- **Real-time Switching**: Calling `i18n.setMode('en')` immediately updates all DOM without refreshing (some pages cached by Service Worker may require a manual refresh).
+- **Custom Events**: Switching language triggers a `languagechange` event; components can listen for this event for additional processing.
+- **Fallback Mechanism**: Returns the key itself when not found, with a Console warning.
+
+### Adding New Translations
+
+1. Add the key simultaneously to both `translations.zh` and `translations.en` in `js/i18n.js`.
+2. Add `data-i18n="key"` (replaces innerHTML) or `data-i18n-placeholder="key"` (replaces placeholder) to elements in HTML.
+3. Get translations via `i18n.t('key')` in JS.
+
+> **Note**: Keys containing hyphens (e.g., `tutorial_app-landing`) must be enclosed in quotes: `'tutorial_app-landing': '...'`, otherwise JS parses `-` as a minus sign causing a syntax error.
+
+---
+
+## Tutorial System
+
+Each page has a dedicated tutorial modal. Click the "Tutorial" button to open the page-specific usage guide (basic operations, parameter descriptions, tips, etc.).
+
+### Button Position (by Page Type)
+
+- **Homepage (`app-landing-page`)**: The tutorial button is at the **top-right** of the viewport, small size, containing only the word "Tutorial", to avoid blocking the homepage top banner.
+- **Other Sub-pages**: The tutorial button is at the **bottom center** of the viewport (`position: fixed; bottom: 20px`), 400px wide, convenient for users to click at any time.
+- **Auto-hide**: The homepage tutorial button auto-hides when entering a sub-page (controlled by `hideAllPages()`), and reappears when returning to the homepage.
+
+### Implementation Details
+
+- **Button Position (CSS)**: `position: fixed` ensures the button is always within the viewport, unaffected by page scrolling. The homepage and sub-pages use different classes to distinguish position and size.
+- **Button Position (DOM)**: The button is placed inside the corresponding page `<div>` (before `</div>`), ensuring the button is also hidden when `hideAllPages()` hides the page.
+- **Dedicated Content**: Each page's tutorial content is page-specific, looking up i18n keys based on the `data-page` attribute (e.g., `app-landing-page` → `tutorial_app-landing`).
+- **Fallback**: Displays generic `tutorial_fallback` content when a dedicated tutorial is not found.
+- **Modal**: Click the overlay, press ESC, or click the × button to close; closing restores `body` scrolling.
+- **Z-index**: Tutorial button `z-index: 9000`, tutorial modal `z-index: 10001`, mouse drag particles `z-index: 99999`.
+
+### Tutorial Key Naming Rules
+
+Remove the `-page` suffix from the page ID and add the `tutorial_` prefix:
+
+| Page ID | i18n key |
+|---------|----------|
+| `app-landing-page` | `tutorial_app-landing` |
+| `landing-page` | `tutorial_landing` |
+| `learning-landing-page` | `tutorial_learning-landing` |
+| `pixel-programming-landing-page` | `tutorial_pixel-programming-landing` |
+| `predictor-page` | `tutorial_predictor` |
+| `function-page` | `tutorial_function` |
+| `calculator-page` | `tutorial_calculator` |
+| `pixel-art-page` | `tutorial_pixel_art` |
+| `pixel-drawing-page` | `tutorial_pixel_draw` |
+| `pixel-music-page` | `tutorial_pixel_music` |
+| `arithmetic-page` | `tutorial_arithmetic` |
+| `mixed-arithmetic-page` | `tutorial_mixed-arithmetic` |
+| `fraction-page` | `tutorial_fraction` |
+| `decimal-page` | `tutorial_decimal` |
+| `equation-page` | `tutorial_equation` |
+| `geometry-page` | `tutorial_geometry` |
+| `speed-page` | `tutorial_speed` |
+| `maze-page` | `tutorial_maze` |
+| `nn-visualizer-page` | `tutorial_nn-visualizer` |
+| `physics-page` | `tutorial_physics` |
+| `pixelizer-page` | `tutorial_pixelizer` |
+| `clock-page` | `tutorial_clock` |
+| `rpg-page` | `tutorial_rpg` |
+| `settings-page` | `tutorial_settings` |
+
+---
+
+## Function System Parameter Dialog
+
+The function system uses custom pixel-style modal dialogs when adding functions and validating parameters, replacing the browser's native `prompt()` / `alert()`, maintaining visual consistency with the entire site.
+
+### Dialog Style `.pixel-dialog`
+
+- **Colors**: Deep space blue `#1a1a2e` background + gold `#ffd700` border + Courier New monospace font.
+- **Hard Shadow**: `4px 4px 0` offset black shadow, presenting an 8-bit three-dimensional feel.
+- **Structure**: Title bar (with × close button) + content area (prompt text + input field) + bottom button bar (confirm / cancel).
+- **Interaction**: Click overlay, press ESC, or click × button to close; confirm button triggers callback.
+
+### Parameter Name Restrictions
+
+- **Single Letter**: Parameter names only allow a single letter (`a-z` / `A-Z`).
+- **Reserved Words Prohibited**: The following reserved words cannot be used as parameter names (filtered by `extractVariables` in `js/expression-parser.js`):
+  - Variables: `x` (independent variable)
+  - Constants: `pi` / `e`
+  - Functions: `sin` / `cos` / `tan` / `log` / `sqrt` / `abs` / `exp` / `ln`
+- On validation failure, a red error message is displayed within the dialog; the user can re-enter without closing the dialog.
+
+### Multi-parameter Auto-creation
+
+- When adding a function with ≥2 parameters (e.g., `y=a*x^2+b*x+c`), the system pops up a confirmation dialog listing all identified parameters.
+- Click the "Create All" button to batch-create sliders for all parameters, without adding them one by one.
+- Each parameter slider can independently set min value, max value, and step.
+
+### Implicit Multiplication Support
+
+Expressions entered in the dialog support both:
+
+- **Explicit multiplication**: `y=a*x^2+b*x+c` (recommended, parsing is more explicit).
+- **Implicit multiplication**: `y=ax^2+bx+c` (`js/expression-parser.js` automatically inserts `*` between numbers and letters, and between letters and letters).
+
+### Validation and Error Messages
+
+- Expression syntax errors, illegal parameter names, division by zero, etc. all trigger red error messages within the dialog.
+- After modifying the input, click confirm again to retry, without refreshing the page.
+
+---
+
+## Homepage Interaction
+
+### Category Collapsing
+
+The 5 top-level categories on the homepage (Learning / Art / Tools / Entertainment) can be independently collapsed/expanded:
+
+- Click the category title to toggle collapse state.
+- Collapse state is saved to `localStorage` and auto-restored on next visit.
+- Collapse icons `▼` / `▶` update in real time.
+
+### Recent Tools
+
+The "Recent" area at the top of the homepage:
+
+- Automatically records the 3 most recently visited tools (FIFO; repeated visits move to the front).
+- Click a card to quickly enter the corresponding tool.
+- Click the "Clear" button to remove all records.
+- When there are no records, this area auto-hides (`display: none`).
+
+### ESC Key Navigation
+
+- Press ESC on any sub-page to return to the previous level page.
+- Press repeatedly to return to the homepage step by step.
+- Pressing ESC on the homepage does nothing.
+- When an input is focused, ESC prioritizes blurring the input (does not trigger page return).
+
+---
+
+## Keyboard Shortcuts
+
+| Shortcut | Action | Applicable Pages |
+|----------|--------|------------------|
+| `ESC` | Return to previous page / blur input | All pages |
+| `Enter` | Submit input (predict, calculate, add function, etc.) | Predictor, Calculator, Function System |
+| `←` `→` `↑` `↓` / `WASD` | Character movement | Pixel RPG |
+| `+` / `-` | Zoom coordinate system | Predictor, Function System |
+| Mouse drag | Pan coordinate system / rotate 3D view / draw | Predictor, Function System, Physics Sandbox, Drawing Editor |
+| Scroll wheel | Zoom | Predictor, Function System, Pixel Art |
+
+---
+
+## Mouse Drag Particle Effects
+
+The mouse drag particle effect implemented by `js/mouse-trails.js`:
+
+- **Trigger**: When the mouse moves on the page (speed exceeds threshold).
+- **Effect**: Generates pixel-style particles along the mouse trajectory, with gravity, decay, and fade-out effects.
+- **Layer**: `z-index: 99999` (topmost), but `pointer-events: none`, not blocking any interaction.
+- **Canvas Reset**: Through dedicated CSS rules for `#mouse-trails-canvas` + inline styles, resets the influence of the global `canvas {}` rule (transparent background, no border, no shadow, unlimited width).
+- **Performance**: Uses `requestAnimationFrame`, with automatic particle count limits to avoid performance issues.
+- **Mobile**: Touch events also trigger particle effects.
+
+---
+
+## MCP Server
+
+The `mcp-server/` directory contains an MCP (Model Context Protocol) server that wraps the site's calculator and predictor as MCP tools, available for direct invocation by MCP clients like TRAE, Claude Desktop, Cursor, etc.
+
+### Exposed Tools
+
+- **`calculate(expression, angle_mode?)`**: Evaluates a math expression (whitelist + restricted `eval`, only exposing the `math` module and trigonometric function wrappers).
+- **`predict_sequence(series, count?, weight_mode?)`**: Predicts subsequent values of a number sequence (4 basic methods: mean, linear regression, differencing, moving average, fused by weight).
+- **`list_predictors()`**: Lists all available prediction methods.
+
+### Installation and Configuration
+
+See [`mcp-server/README.md`](mcp-server/README.md).
+
+### Security Notes
+
+- Expression evaluation uses restricted `eval`; the global namespace `__builtins__` is empty, only exposing the `math` module and trigonometric function wrappers.
+- Input character whitelist: digits, `+ - * / ( ) .` whitespace, function names `sqrt` / `sin` / `cos` / `tan`; all other characters are directly rejected.
+- Trigonometric DEG mode is converted to radians via `x * π / 180`, with a built-in exact value lookup table for special angles (0/30/45/60/90/120/135/150/180/270/360 degrees).
+
+---
+
+## WebAssembly Acceleration
+
+The `wasm/` directory contains the Wasm-accelerated version of the reaction-diffusion mode. **Currently fixed**: Uses an inline JS optimized kernel approach with no external wasm file dependency, avoiding the Emscripten compilation output loading failure issue, while retaining the C source code as an algorithm reference.
+
+### Loading Flow
+
+1. The user enables the "WebAssembly Acceleration" toggle in the settings page.
+2. When entering the pixel art generator and selecting the "Reaction-Diffusion RD" mode, `loadWasmModule()` is called to initialize the inline optimized kernel.
+3. After successful kernel initialization, `wasmLoaded = true`, and the reaction-diffusion mode automatically switches to the accelerated path.
+4. The Toast message is explicit: **"WebAssembly acceleration enabled (JS optimized kernel)"**, to avoid users mistaking it for a real wasm binary.
+5. If initialization fails (rare), it automatically falls back to the normal JS path and notifies the user.
+
+### Performance Optimization Techniques
+
+- **`Float32Array`**: All diffusion fields (u / v / du / dv) use `Float32Array` instead of regular arrays, reducing memory usage and accelerating access.
+- **Inline laplacian**: The 3×3 neighborhood sum is directly inlined into the main loop, avoiding function call overhead.
+- **Cached array length**: `width` / `height` are read outside the loop in advance, avoiding repeated property access per frame.
+- **Boundary clipping**: Boundary grid points skip laplacian computation, reducing branch checks.
+- Overall performance is 3-5x faster than the naive JS version, capable of handling higher resolutions and more iterations.
+
+### File Description
+
+- **Source**: `wasm/reaction-diffusion.c` (Gray-Scott reaction-diffusion model C source, as algorithm reference).
+- **Build Script**: `wasm/build.sh` (Emscripten compilation, optional path; runtime no longer depends on compilation output).
+
+### Compiling Wasm (Optional)
+
+```bash
+cd wasm
+# 需要先安装 Emscripten SDK（emsdk）
+./build.sh
+# 生成的 reaction_diffusion.wasm 会自动放到 ../js/ 目录
+```
+
+> **Note**: The compilation output is not directly used by the runtime; it is retained only as an optional experimental path. To enable real wasm binary loading, you need to re-integrate the `WebAssembly.instantiate` path in `js/pixel-art.js`.
+
+---
+
+## Browser Compatibility
+
+| Browser | Minimum Version | Notes |
+|---------|-----------------|-------|
+| Chrome | 90+ | Recommended |
+| Edge | 90+ | Recommended |
+| Firefox | 88+ | Recommended |
+| Safari | 14+ | iOS Safari 14+ |
+| Samsung Internet | 14+ | |
+| IE | Not supported | Uses ES6+ features |
+
+### Required Web APIs
+
+- **Service Worker**: PWA offline functionality.
+- **Cache API**: SW caching.
+- **localStorage**: User settings storage.
+- **IndexedDB**: Avatar and background image storage.
+- **Canvas 2D**: All drawing.
+- **Web Audio API**: Pixel music synthesizer.
+- **Blob URL**: Image processing.
+- **WebAssembly** (optional): Reaction-diffusion acceleration.
+
+---
+
+## Performance & Accessibility
+
+### Performance Optimization
+
+- **Zero Dependencies**: No third-party libraries apart from p5.js (used only by the pixel art generator).
+- **On-demand Loading**: Each tool's JS is only initialized when that tool is opened.
+- **Canvas Redraw Optimization**: Only redraws when data changes, avoiding meaningless `requestAnimationFrame`.
+- **Particle Count Limit**: Mouse drag particle effects automatically limit particle count.
+- **Service Worker Cache**: All static assets cached; second visit has zero network requests.
+- **CSS Variables**: Unified design tokens, avoiding repeated style calculations.
+
+### Accessibility
+
+- **Keyboard Navigation**: All buttons and inputs support Tab key focus and Enter key submission.
+- **focus-visible**: Shows a prominent gold border on focus (`border-color: var(--accent)`).
+- **ARIA Labels**: Decorative SVGs have `aria-hidden="true"`.
+- **prefers-reduced-motion**: Respects the system "reduce motion" setting, disabling button transition animations.
+- **Semantic HTML**: Uses semantic tags like `<header>` `<footer>` `<button>`.
+- **Color Contrast**: All text-to-background contrast ratios meet WCAG AA standards.
+
+---
+
+## Changelog
+
+### 2026-07 · RPG Wiki Encyclopedia + Floor System Refactor + Site-wide i18n Improvement
+
+- **RPG Wiki Encyclopedia Button**: Added a "Wiki Encyclopedia" button to the console (English Wikipedia), clicking opens a documentation page.
+- **Wiki Documentation Page**: Document-style layout with table of contents navigation, 4 major sections:
+  - Basic Attributes: HP/EXP/ATK/DEF meaning explanations
+  - Operation Guide: Movement/attack/reset instructions
+  - Item Catalog: 8 item introductions (Wooden Sword/Recovery Potion I/Leather Helmet/Leather Armor/Leather Leggings/Leather Boots/Experience Gem I/Attack Ring)
+  - Monster Mechanics: Monster types/spawning/combat/rewards
+- **Levels Changed to Floors**: All "Level N"/"level" text changed to "Floor N"/"floor" (drawUI/game over/reset/enter next floor prompts), better fitting the dungeon exploration theme.
+- **Site-wide i18n Improvement**: Scanned 18 files with ~410 hardcoded Chinese strings, all connected to the i18n system:
+  - `js/pixel-rpg.js`: Monster names/item names/showMessage/fillText all i18n-ized
+  - `js/math-cards-ext.js`: 5 learning cards (fraction/decimal/equation/geometry/speed challenge) 200+ texts i18n-ized
+  - `js/predictors.js`: 40 prediction method names i18n-ized
+  - `js/math-cards.js`/`js/app.js`/`js/expression-parser.js`/`js/function-3d.js`/`js/pixel-clock.js`/`js/chart.js`/`js/nn-visualizer.js`/`js/nn.js`/`js/offsetfit.js`/`js/overfit.js`/`js/physics-sandbox.js`/`js/image-pixelizer.js` all i18n-ized
+  - `index.html`: title/aria-label attributes connected via `data-i18n-title`/`data-i18n-aria-label`
+  - i18n.js apply() function extended to support `data-i18n-title`/`data-i18n-aria-label` attributes
+- **Service Worker** cache version upgraded to v24.
+
+---
+
+### 2026-07 · RPG Inventory/Equipment System Rework
+
+- **Inventory Cell Enlargement**: Each cell ≥56px, item count displayed in the bottom-right corner (white font, transparent background); single items don't show a count.
+- **Equipment Expanded to 7 Slots**: Left hand, right hand, head, body, legs, feet, accessory, replacing the original weapon/armor 2 slots.
+- **8 New Items**: Removed old 6 items, added Wooden Sword (weapon atk+2), Recovery Potion I (restores 20 HP), Leather Helmet (def+1), Leather Armor (def+3), Leather Leggings (def+2), Leather Boots (def+1), Experience Gem I (+1 EXP), Attack Ring (accessory atk+1).
+- **Pixel Art Item Icons**: Item icons changed to canvas-drawn pixel art (48x48), each item has a unique visual (wooden sword/potion bottle/leather set/gem/ring), no longer using emoji.
+- **Click Interaction System**:
+  - Click an item cell → selected highlight + detail panel below shows item attributes (name/type/description/stat bonuses).
+  - Consumables show a "Use" button, equippable items show an "Equip" button, equipped items show an "Unequip" button.
+  - First click a cell with an item, then click another cell → swap/move items (inventory↔inventory swap, inventory→equipment slot equip, equipment slot→inventory unequip).
+  - Click outside the inventory and equipment area → deselect.
+  - Click the same cell again → deselect.
+- **Equipment Bonus Calculation**: ATK/DEF bonuses iterate through all 7 equipment slots and accumulate; drawUI displays in `ATK base+bonus` format.
+- **Service Worker** cache version upgraded to v23.
+
+---
+
+### 2026-07 · RPG Inventory/Equipment/Map Layout/Navigation Improvements
+
+| # | Module | Update Content |
+|---|--------|----------------|
+| 1 | Pixel RPG · Inventory | Added backpack system (16-slot capacity). Chests no longer immediately consume rewards; instead, dropped items are stored in the backpack: HP Potion (consumable, stackable), Experience Gem (instantly consumed for EXP), Iron Sword/Attack Ring (weapons), Steel Armor/Defense Charm (armor). When backpack is full, a prompt is shown and the item is not picked up. |
+| 2 | Pixel RPG · Equipment | Added weapon/armor equipment slots. Click equipment in backpack to equip (old equipment returns to backpack); click equipment slot to unequip. Equipment bonuses take effect in real time; `getEffectiveAtk()`/`getEffectiveDef()` calculate total stats including equipment; `combatRound` uses effective stats for damage calculation. Top UI displays `ATK 5+3` format (base + equipment bonus). |
+| 3 | Pixel RPG · Map Layout | RPG page changed from left-right split to top-bottom layout: control buttons (start/stop/reset) in a horizontal row on top, map canvas below occupying a large area (`width:100%` filling the panel), inventory/equipment side panel on the right (240px). Mobile automatically stacks in a single column. Map visually significantly enlarged. |
+| 4 | Pixel RPG · Click Monster Auto-Attack | When clicking a monster, the player auto-BFS-pathfinds to the adjacent cell of the monster, and upon arrival **automatically initiates attack** (no manual key press needed). Added `attackTarget` field to record attack intent; `navigateTo` detects the target cell monster and sets it as attack target; `update` auto-calls `combatRound` upon arrival. |
+| 5 | Pixel RPG · Path Blocked Stop | When auto-navigation encounters a monster blocking the path mid-way, the player walks to the front of the monster and **stops moving**, **does not clear the remaining path**, displaying "Ahead: [Monster Name]! Attack (Space) or go around" for the player to decide. After defeating the monster, re-clicking the target can continue navigation. Fixed the issue where the original `tryMove` failure directly cleared the entire pathQueue. |
+| 6 | Pixel RPG · UI Overview | Top UI panel added backpack count display (`Backpack N/16`) and equipment bonus display (`ATK 5+3`/`DEF 1+2` format). |
+
+> Files affected by this update: `js/pixel-rpg.js` (inventory/equipment data structures, `ITEM_TEMPLATES`, `openChest` rewrite, `equipItem`/`unequipItem`/`useItem`/`getEffectiveAtk`/`getEffectiveDef`/`faceTowards`/`renderInventory`/`renderEquipment` added, `navigateTo`/`update`/`drawUI`/`combatRound`/`reset` modified), `index.html` (RPG page layout refactor + inventory/equipment DOM), `styles/pixel.css` (layout styles + inventory/equipment pixel-style styles), `js/i18n.js` (`rpg_equipment_title`/`rpg_inventory_title` Chinese/English keys).
+
+---
+
+### 2026-07 · 7 Fixes and New Features
+
+| # | Module | Update Content |
+|---|--------|----------------|
+| 1 | Settings Page · Back Button | Settings page "Back to Home" button moved from bottom footer to top-right floating (`floating-back-btn` style), consistent with other tool pages. |
+| 2 | Startup Flow · Nickname | App startup no longer forces a nickname registration popup; when there's no profile, it silently uses the default nickname "Guest" and goes directly to the homepage; can be modified at any time in the settings page. |
+| 3 | User Info · Persistence | User information (nickname, avatar, background) changed from sessionStorage to localStorage for persistence, remaining after closing the browser; a cookie `pixel_user_session` (max-age one year) is also set as a registered marker, no more re-registration. Logging out clears localStorage and the cookie. |
+| 4 | Pixel Drawing Editor · Canvas | Canvas CSS display size increased from max-width 512px to 768px, logical pixel options (16 / 32 / 64 / 128) unchanged. |
+| 5 | Pixel RPG · Auto Navigation | Pixel RPG added click/touch any movable cell on the map, with the player automatically moving cell by cell along the BFS shortest path. Supports mobile touch and desktop mouse (pointerdown events). Keyboard operation (arrow keys / WASD) retained; pressing arrow keys can interrupt auto-navigation. Click a monster to pathfind to an adjacent cell; click an exit/chest to pathfind to the target cell and trigger the corresponding event; clicking a wall does nothing. |
+| 6 | Physics Sandbox · Simplified + Hydrogen + Gas Button | Removed 7 substances (sand/stone/fire/plant/metal/oil/acid), keeping only water (EMPTY eraser retained as erasing tool). Water's falling + lateral flow physics fully preserved. Added hydrogen substance: floats upward (opposite to gravity), can rise through water, invisible by default. Added "Gas" button: click to toggle hydrogen visibility (semi-transparent light blue when visible). |
+| 7 | Page Navigation · Scroll Position | Page scroll position is saved when switching pages, and restored to the last position when returning to that page (no longer jumps to the top). ESC return also restores. |
+
+> Files affected by this update: `js/app.js` (settings page back button, startup nickname, localStorage + cookie persistence, page switching scroll position), `js/pixel-drawing-editor.js` (canvas 768px), `js/pixel-rpg.js` (BFS auto-navigation), `js/physics-sandbox.js` (simplified + hydrogen + gas button), `styles/pixel.css` (`floating-back-btn` style, canvas size).
+
+---
+
+## Contributing
+
+Contributions via Issues and Pull Requests are welcome!
+
+### Contribution Process
+
+1. Fork this repository.
+2. Create a feature branch: `git checkout -b feature/your-feature`.
+3. Commit changes: `git commit -m 'feat: add your feature'` (recommend using [Conventional Commits](https://www.conventionalcommits.org/) specification).
+4. Push the branch: `git push origin feature/your-feature`.
+5. Submit a Pull Request.
+
+### Contribution Directions
+
+- New Tools: Add new pixel-style tools (e.g., pixel tower defense, pixel drawing board import/export, etc.).
+- New Art Modes: Add new generation algorithms for the pixel art generator.
+- New Prediction Methods: Add new mathematical methods for the prediction system.
+- New Learning Cards: Add new math concept cards for the learning system.
+- Internationalization: Add new language support (e.g., Japanese, Korean).
+- Performance Optimization: Wasm acceleration for more modes.
+- Bug Fixes: Fix issues reported in Issues.
+
+### Code Standards
+
+- JavaScript: ES5-compatible syntax (`var` / `function`), IIFE pattern, mounted on the `window` global.
+- CSS: Use CSS Variables, follow BEM naming (some legacy code may not fully comply).
+- HTML: Semantic tags, `data-i18n` annotations for all user-visible text.
+
+---
+
+## FAQ
+
+### 1. Why must I use `http://localhost`? Can't I just open it with `file://`?
+
+Service Worker can only be registered under `http://` or `https://` protocols. Under `file://`, `localStorage` is also restricted, and CDN resources like p5.js will fail to load. Please use `python3 -m http.server 8000` or `serve -p 8000` to start a local static server and then access `http://localhost:8000`.
+
+### 2. Can the website be used offline?
+
+Yes. After the first load completes, the Service Worker caches all static assets. You can add the site as a PWA to your desktop via the "Install" button in the browser address bar, after which it can be used fully offline.
+
+### 3. I modified a JS file but refreshing the page didn't take effect?
+
+The Service Worker may have cached the old version. Open Chrome DevTools → Application → Service Workers, check "Update on reload" and then refresh; or close all tabs and reopen. Each deployment automatically upgrades `CACHE_VERSION` and clears old caches.
+
+### 4. Some text didn't update after switching language?
+
+The vast majority of text switches in real time, but a few pages cached by the Service Worker may require a manual refresh. If you encounter missing keys, a warning will appear in the Console; feel free to submit an Issue.
+
+### 5. Is the WebAssembly acceleration actually real wasm?
+
+Currently fixed to an inline JS optimized kernel approach with no external wasm file dependency. The Toast message explicitly reads "WebAssembly acceleration enabled (JS optimized kernel)". `wasm/reaction-diffusion.c` is still retained as an algorithm reference; you can recompile via `wasm/build.sh` to experiment with the real wasm binary path.
+
+### 6. Will data be uploaded to a server?
+
+No. This project has zero backend dependencies; all computation, storage, and rendering happen in the browser. Image pixelization and drawing export are all processed on the client side; images are never uploaded to any server. User information (nickname, avatar, background) is persisted in `localStorage` + cookie `pixel_user_session` (max-age one year), remaining after closing the browser, so no re-registration on the next visit; other data is saved in `localStorage` / `IndexedDB` and destroyed when the browser is closed (unless the user actively keeps it). Logging out clears both the user info in `localStorage` and the `pixel_user_session` cookie.
+
+### 7. Why doesn't the function system let me use `x` as a parameter name?
+
+`x` is the independent variable of the function and is already occupied by the system. Similarly, `pi`, `e`, `sin`, `cos`, `tan`, `log`, `sqrt`, `abs`, `exp`, `ln` are all reserved words and cannot be used as parameter names. Please use other single letters like `a`, `b`, `c` as parameters.
+
+### 8. How do I connect the MCP Server to TRAE / Claude?
+
+See [`mcp-server/README.md`](mcp-server/README.md). Simply put, after `pip install -r requirements.txt`, start `server.py`, and then add the corresponding server configuration in the MCP client configuration file.
+
+### 9. Can I use it on mobile?
+
+Yes. All tools have responsive adaptation: desktop dual-column layout, mobile single-column adaptive, with touch-friendly button sizes and spacing. Recommended: iOS Safari 14+ or Android Chrome 90+.
+
+### 10. How do I contribute new prediction methods / art modes / learning cards?
+
+Refer to the "Contribution Process" section to Fork and create a feature branch. Add new prediction methods to the `predictors` array in `js/predictors.js`; implement `generateXxx()` functions for new art modes in `js/pixel-art.js`; add new learning cards in `js/math-cards.js` or `js/math-cards-ext.js`, create the corresponding page div in `index.html`, and add tutorial translations in `js/i18n.js`.
+
+---
+
+## License
+
+[MIT](LICENSE)
+
+© 2026 Pixel Tools. Retro Deep-Space Pixel Theme.
+
+---
+
+## Acknowledgements
+
+- [p5.js](https://p5js.org/): Drawing helper library for the pixel art generator.
+- [Emscripten](https://emscripten.org/): WebAssembly compilation toolchain.
+- [FastMCP](https://github.com/modelcontextprotocol/python-sdk): MCP Server framework.
+- [GitHub Pages](https://pages.github.com/): Free hosting.
+- [GitHub Actions](https://github.com/features/actions): Automatic deployment.
+
+---
+
+> If this project helps you, please give it a ⭐ Star on GitHub!
 
 ---
 

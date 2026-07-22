@@ -977,6 +977,7 @@
       tutorial_rpg: '<h3>像素 RPG 游戏教程</h3><p>简单的像素风 RPG 小游戏，回合制战斗、角色升级。</p><h3>基本操作</h3><ul><li><strong>移动：</strong>方向键或 WASD 控制角色移动</li><li><strong>战斗：</strong>遇到敌人进入回合制战斗</li><li><strong>攻击：</strong>选择攻击、技能、道具等指令</li><li><strong>升级：</strong>击败敌人获得经验值，升级提升属性</li></ul><h3>操作说明</h3><ul><li>按 ESC 暂停游戏</li><li>战斗中选择指令后按回车确认</li><li>角色死亡可重新开始</li></ul>',
       tutorial_settings: '<h3>设置页教程</h3><p>个人设置和偏好配置。</p><h3>可设置项</h3><ul><li><strong>昵称：</strong>修改你的昵称</li><li><strong>语言：</strong>切换中文/英文</li><li><strong>背景：</strong>选择不同的背景风格</li><li><strong>清除数据：</strong>清除本地存储的数据</li></ul><h3>操作说明</h3><ul><li>修改设置后自动保存</li><li>点击左上角按钮返回首页</li></ul>',
       tutorial_btn: '教程',
+      tutorial_title: '教程',
       tutorial_fallback: '<h3>使用教程</h3><p>欢迎使用本工具！</p><p>本工具提供像素风格的交互体验，您可以：</p><ul><li>点击页面上的按钮和控件进行操作</li><li>使用鼠标拖拽进行平移</li><li>使用滚轮进行缩放</li><li>点击左上角按钮返回上一级</li><li>按 ESC 键返回上一级页面</li></ul>'
     },
 
@@ -1941,6 +1942,7 @@
       tutorial_rpg: '<h3>Pixel RPG Game Tutorial</h3><p>Simple pixel-style RPG with turn-based combat and leveling.</p><h3>Basic Usage</h3><ul><li><strong>Move:</strong> Arrow keys or WASD</li><li><strong>Battle:</strong> Turn-based combat when encountering enemies</li><li><strong>Attack:</strong> Choose attack, skill, item commands</li><li><strong>Level Up:</strong> Defeat enemies to gain XP, level up to increase stats</li></ul><h3>Usage</h3><ul><li>Press ESC to pause</li><li>In battle, select command and press Enter to confirm</li><li>Restart available after death</li></ul>',
       tutorial_settings: '<h3>Settings Tutorial</h3><p>Personal settings and preferences.</p><h3>Options</h3><ul><li><strong>Nickname:</strong> Change your nickname</li><li><strong>Language:</strong> Toggle Chinese/English</li><li><strong>Background:</strong> Choose background style</li><li><strong>Clear Data:</strong> Clear locally stored data</li></ul><h3>Usage</h3><ul><li>Settings auto-save on change</li><li>Click top-left button to return home</li></ul>',
       tutorial_btn: 'Tutorial',
+      tutorial_title: 'Tutorial',
       tutorial_fallback: '<h3>Usage Tutorial</h3><p>Welcome to this tool!</p><p>This tool provides pixel-style interactive experience:</p><ul><li>Click buttons and controls to operate</li><li>Drag mouse to pan</li><li>Scroll to zoom</li><li>Click top-left button to go back</li><li>Press ESC to go back to previous page</li></ul>'
     }
   };
