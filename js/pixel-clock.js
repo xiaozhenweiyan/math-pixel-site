@@ -588,10 +588,19 @@ window.PixelClock = (function () {
     const month = now.getMonth() + 1;
     const day = now.getDate();
     const week = getWeekdayShort(now.getDay());
-    const weekdayPrefix = (typeof window !== 'undefined' && window.i18n && window.i18n.t('clock_weekday_prefix')) || '星期';
-    const dateStr = year + '-' +
-      String(month).padStart(2, '0') + '-' +
-      String(day).padStart(2, '0') + '   ' + weekdayPrefix + week;
+    var isEn = (typeof window !== 'undefined' && window.i18n && window.i18n.getCurrentLang && window.i18n.getCurrentLang() === 'en');
+    var dateStr;
+    if (isEn) {
+      // 英文格式：MM/DD/YYYY   Day
+      dateStr = String(month).padStart(2, '0') + '/' +
+        String(day).padStart(2, '0') + '/' + year + '   ' + week;
+    } else {
+      // 中文格式：YYYY-MM-DD   星期X
+      var weekdayPrefix = '星期';
+      dateStr = year + '-' +
+        String(month).padStart(2, '0') + '-' +
+        String(day).padStart(2, '0') + '   ' + weekdayPrefix + week;
+    }
 
     ctx.fillStyle = COLOR.TEXT;
     ctx.font = 'bold ' + Math.floor(canvas.height * 0.06) + 'px monospace';

@@ -1646,6 +1646,25 @@ footer.pixel-panel p {
   color: #ffffff;
   font-family: 'Courier New', monospace;
 }
+.file-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.file-upload-btn {
+  flex-shrink: 0;
+}
+.file-upload-hint {
+  color: #8888aa;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
 .settings-color-row {
   display: flex;
   align-items: center;

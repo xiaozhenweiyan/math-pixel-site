@@ -325,6 +325,8 @@
       btn_save_nickname: '保存昵称',
       label_avatar: '头像（≤200KB，jpg/png/gif/webp/svg）',
       btn_clear_avatar: '清除头像',
+      btn_choose_file: '选择文件',
+      file_no_selection: '未选择文件',
       label_bg_image: '背景图片（≤1MB，jpg/png/gif/webp/svg）',
       label_bg_color: '背景颜色',
       btn_apply_color: '应用颜色',
@@ -868,6 +870,7 @@
       clock_weekday_short_5: '五',
       clock_weekday_short_6: '六',
       clock_weekday_prefix: '星期',
+      clock_date_format: 'ymd',
       clock_font_switch_hint: '[ {style} ]  ·  PixelClock.setFontStyle() 切换风格',
       clock_month_1: '一月',
       clock_month_2: '二月',
@@ -973,6 +976,7 @@
       tutorial_clock: '<h3>像素时钟教程</h3><p>复古像素风时钟、日历和番茄钟工具。</p><h3>功能</h3><ul><li><strong>数字时钟：</strong>实时显示当前时间，多种像素字体风格</li><li><strong>日历：</strong>月历视图，可标记事件</li><li><strong>番茄钟：</strong>25 分钟工作 + 5 分钟休息，提高专注力</li></ul><h3>操作说明</h3><ul><li>点击不同标签切换时钟/日历/番茄钟</li><li>番茄钟点击「开始」启动计时</li><li>日历点击日期可添加事件标记</li><li>可切换不同像素字体风格</li></ul>',
       tutorial_rpg: '<h3>像素 RPG 游戏教程</h3><p>简单的像素风 RPG 小游戏，回合制战斗、角色升级。</p><h3>基本操作</h3><ul><li><strong>移动：</strong>方向键或 WASD 控制角色移动</li><li><strong>战斗：</strong>遇到敌人进入回合制战斗</li><li><strong>攻击：</strong>选择攻击、技能、道具等指令</li><li><strong>升级：</strong>击败敌人获得经验值，升级提升属性</li></ul><h3>操作说明</h3><ul><li>按 ESC 暂停游戏</li><li>战斗中选择指令后按回车确认</li><li>角色死亡可重新开始</li></ul>',
       tutorial_settings: '<h3>设置页教程</h3><p>个人设置和偏好配置。</p><h3>可设置项</h3><ul><li><strong>昵称：</strong>修改你的昵称</li><li><strong>语言：</strong>切换中文/英文</li><li><strong>背景：</strong>选择不同的背景风格</li><li><strong>清除数据：</strong>清除本地存储的数据</li></ul><h3>操作说明</h3><ul><li>修改设置后自动保存</li><li>点击左上角按钮返回首页</li></ul>',
+      tutorial_btn: '教程',
       tutorial_fallback: '<h3>使用教程</h3><p>欢迎使用本工具！</p><p>本工具提供像素风格的交互体验，您可以：</p><ul><li>点击页面上的按钮和控件进行操作</li><li>使用鼠标拖拽进行平移</li><li>使用滚轮进行缩放</li><li>点击左上角按钮返回上一级</li><li>按 ESC 键返回上一级页面</li></ul>'
     },
 
@@ -1285,6 +1289,8 @@
       btn_save_nickname: 'Save Nickname',
       label_avatar: 'Avatar (≤200KB, jpg/png/gif/webp/svg)',
       btn_clear_avatar: 'Clear Avatar',
+      btn_choose_file: 'Choose File',
+      file_no_selection: 'No file chosen',
       label_bg_image: 'Background Image (≤1MB, jpg/png/gif/webp/svg)',
       label_bg_color: 'Background Color',
       btn_apply_color: 'Apply Color',
@@ -1828,6 +1834,7 @@
       clock_weekday_short_5: 'Fri',
       clock_weekday_short_6: 'Sat',
       clock_weekday_prefix: '',
+      clock_date_format: 'mdy',
       clock_font_switch_hint: '[ {style} ]  ·  PixelClock.setFontStyle() to switch style',
       clock_month_1: 'January',
       clock_month_2: 'February',
@@ -1933,6 +1940,7 @@
       tutorial_clock: '<h3>Pixel Clock Tutorial</h3><p>Retro pixel-style clock, calendar, and pomodoro timer.</p><h3>Features</h3><ul><li><strong>Digital Clock:</strong> Real-time display, multiple pixel font styles</li><li><strong>Calendar:</strong> Monthly view, event marking</li><li><strong>Pomodoro:</strong> 25-min work + 5-min break for focus</li></ul><h3>Usage</h3><ul><li>Click tabs to switch between clock/calendar/pomodoro</li><li>Pomodoro: click "Start" to begin timer</li><li>Calendar: click date to add event marker</li><li>Switch between different pixel font styles</li></ul>',
       tutorial_rpg: '<h3>Pixel RPG Game Tutorial</h3><p>Simple pixel-style RPG with turn-based combat and leveling.</p><h3>Basic Usage</h3><ul><li><strong>Move:</strong> Arrow keys or WASD</li><li><strong>Battle:</strong> Turn-based combat when encountering enemies</li><li><strong>Attack:</strong> Choose attack, skill, item commands</li><li><strong>Level Up:</strong> Defeat enemies to gain XP, level up to increase stats</li></ul><h3>Usage</h3><ul><li>Press ESC to pause</li><li>In battle, select command and press Enter to confirm</li><li>Restart available after death</li></ul>',
       tutorial_settings: '<h3>Settings Tutorial</h3><p>Personal settings and preferences.</p><h3>Options</h3><ul><li><strong>Nickname:</strong> Change your nickname</li><li><strong>Language:</strong> Toggle Chinese/English</li><li><strong>Background:</strong> Choose background style</li><li><strong>Clear Data:</strong> Clear locally stored data</li></ul><h3>Usage</h3><ul><li>Settings auto-save on change</li><li>Click top-left button to return home</li></ul>',
+      tutorial_btn: 'Tutorial',
       tutorial_fallback: '<h3>Usage Tutorial</h3><p>Welcome to this tool!</p><p>This tool provides pixel-style interactive experience:</p><ul><li>Click buttons and controls to operate</li><li>Drag mouse to pan</li><li>Scroll to zoom</li><li>Click top-left button to go back</li><li>Press ESC to go back to previous page</li></ul>'
     }
   };

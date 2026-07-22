@@ -3026,6 +3026,9 @@
         btn.dataset.element = el.id;
         btn.style.backgroundColor = el.color;
         btn.textContent = el.name;
+        if (el.nameKey) {
+          btn.setAttribute('data-i18n', el.nameKey);
+        }
         btn.addEventListener('click', function () {
           const allBtns = elementsEl.querySelectorAll('.physics-element-btn');
           for (let j = 0; j < allBtns.length; j++) allBtns[j].classList.remove('active');
@@ -4401,6 +4404,32 @@
     applyBackground();
     initRegisterModal();
     initAppUserBar();
+
+    // 文件上传按钮触发原生 input + 自定义提示文案 / pixel-styled file upload
+    function setupFileUploadButton(btnId, inputId, hintId) {
+      var btn = document.getElementById(btnId);
+      var input = document.getElementById(inputId);
+      var hint = document.getElementById(hintId);
+      if (!btn || !input) return;
+      btn.addEventListener('click', function () {
+        input.click();
+      });
+      if (hint) {
+        input.addEventListener('change', function () {
+          if (input.files && input.files.length > 0) {
+            hint.textContent = input.files[0].name;
+            hint.removeAttribute('data-i18n');
+          } else {
+            hint.textContent = (window.i18n && window.i18n.t('file_no_selection')) || '未选择文件';
+            hint.setAttribute('data-i18n', 'file_no_selection');
+          }
+        });
+      }
+    }
+    setupFileUploadButton('btn-pixelizer-choose', 'pixelizer-file', 'pixelizer-file-hint');
+    setupFileUploadButton('btn-avatar-choose', 'settings-avatar-input', 'settings-avatar-hint');
+    setupFileUploadButton('btn-bg-choose', 'settings-bg-image-input', 'settings-bg-hint');
+
     initSettings();
     // 默认显示工具首页 / show app landing page by default
     showAppLanding();
@@ -4436,6 +4465,19 @@
       const langSelect = document.getElementById('settings-language');
       if (langSelect && i18n.getCurrentMode) {
         langSelect.value = i18n.getCurrentMode();
+      }
+
+      // 重新渲染物理沙盒元素按钮文案 / re-render physics element button labels
+      var physicsElementsEl = document.getElementById('physics-elements');
+      if (physicsElementsEl && window.PhysicsSandbox && window.PhysicsSandbox.ELEMENTS) {
+        var elementBtns = physicsElementsEl.querySelectorAll('.physics-element-btn');
+        for (var ei = 0; ei < elementBtns.length; ei++) {
+          var ebtn = elementBtns[ei];
+          var eid = parseInt(ebtn.getAttribute('data-element'), 10);
+          if (window.PhysicsSandbox.getElementName) {
+            ebtn.textContent = window.PhysicsSandbox.getElementName(eid);
+          }
+        }
       }
     });
 

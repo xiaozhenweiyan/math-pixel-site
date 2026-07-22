@@ -8,6 +8,39 @@
 
 ---
 
+## Table of Contents
+
+- [Online Access](#在线访问)
+- [Project Overview](#项目简介)
+- [Core Features](#核心特性)
+- [Tool Directory](#工具目录)
+  - [Learning](#学习类-learning)
+  - [Art](#艺术类-art)
+  - [Sandbox](#沙盒类-sandbox)
+  - [Tools](#工具类-tools)
+  - [Entertainment](#娱乐类-entertainment)
+- [Prediction System (40 Methods)](#预测系统-40-种方法)
+- [Tech Stack](#技术栈)
+- [Project Structure](#项目结构)
+- [File Manifest](#文件清单)
+- [Local Development](#本地开发)
+- [Deploy to GitHub Pages](#部署到-github-pages)
+- [PWA & Service Worker Strategy](#pwa-与-service-worker-策略)
+- [Internationalization (i18n)](#国际化i18n)
+- [Tutorial System](#教程系统)
+- [Function System Parameter Dialog](#函数系统参数弹窗)
+- [Homepage Interaction](#首页交互)
+- [Keyboard Shortcuts](#键盘快捷键)
+- [Mouse Drag Particle Effects](#鼠标拖拽粒子特效)
+- [MCP Server](#mcp-server)
+- [WebAssembly Acceleration](#webassembly-加速)
+- [Browser Compatibility](#浏览器兼容性)
+- [Performance & Accessibility](#性能与无障碍)
+- [Changelog](#更新日志)
+- [Contributing](#贡献)
+- [FAQ](#常见问题-faq)
+- [License](#license)
+
 ## 目录
 
 - [在线访问](#在线访问)

@@ -1406,7 +1406,11 @@
         <h2 data-i18n="pixelizer_controls_title">控制台</h2>
         <div class="pixelizer-control-row">
           <label class="pixelizer-label" data-i18n="pixelizer_upload">上传图片</label>
-          <input type="file" id="pixelizer-file" accept="image/*" class="pixel-input">
+          <div class="file-upload-row">
+            <input type="file" id="pixelizer-file" accept="image/*" style="display:none;">
+            <button type="button" class="pixel-btn file-upload-btn" id="btn-pixelizer-choose" data-i18n="btn_choose_file">选择文件</button>
+            <span class="file-upload-hint" id="pixelizer-file-hint" data-i18n="file_no_selection">未选择文件</span>
+          </div>
         </div>
         <div class="pixelizer-control-row">
           <label class="pixelizer-label">
@@ -1596,14 +1600,22 @@
           <label class="settings-label" data-i18n="label_avatar">头像（≤200KB，jpg/png/gif/webp/svg）</label>
           <div class="settings-avatar-row">
             <div class="settings-avatar-preview" id="settings-avatar-preview">?</div>
-            <input type="file" id="settings-avatar-input" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml" class="settings-file-input">
+            <div class="file-upload-row">
+              <input type="file" id="settings-avatar-input" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml" style="display:none;">
+              <button type="button" class="pixel-btn file-upload-btn" id="btn-avatar-choose" data-i18n="btn_choose_file">选择文件</button>
+              <span class="file-upload-hint" id="settings-avatar-hint" data-i18n="file_no_selection">未选择文件</span>
+            </div>
           </div>
           <button id="btn-clear-avatar" class="pixel-btn" data-i18n="btn_clear_avatar">清除头像</button>
         </div>
 
         <div class="settings-section">
           <label class="settings-label" data-i18n="label_bg_image">背景图片（≤1MB，jpg/png/gif/webp/svg）</label>
-          <input type="file" id="settings-bg-image-input" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml" class="settings-file-input">
+          <div class="file-upload-row">
+            <input type="file" id="settings-bg-image-input" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml" style="display:none;">
+            <button type="button" class="pixel-btn file-upload-btn" id="btn-bg-choose" data-i18n="btn_choose_file">选择文件</button>
+            <span class="file-upload-hint" id="settings-bg-hint" data-i18n="file_no_selection">未选择文件</span>
+          </div>
         </div>
 
         <div class="settings-section">

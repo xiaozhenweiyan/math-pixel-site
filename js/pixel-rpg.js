@@ -169,6 +169,8 @@ window.PixelRPG = (function () {
     level: 1,                    // 当前关卡
     gameOver: false,
     message: '',
+    messageKey: null,
+    messageParams: null,
     messageTimer: 0,
     animTime: 0,
 
@@ -884,8 +886,10 @@ window.PixelRPG = (function () {
    * @param {string} msg 消息内容
    * @param {number} dur 显示时长（秒）
    */
-  function showMessage(msg, dur) {
+  function showMessage(msg, dur, key, params) {
     state.message = msg;
+    state.messageKey = key || null;
+    state.messageParams = params || null;
     state.messageTimer = dur || 1.5;
   }
 
@@ -1089,12 +1093,12 @@ window.PixelRPG = (function () {
     const dmgToMonster = Math.max(1, getEffectiveAtk() - monster.def);
     const monsterDisplay = getMonsterDisplayName(monster);
     monster.hp -= dmgToMonster;
-    showMessage(window.i18n ? (window.i18n.t('rpg_msg_deal_damage', { monster: monsterDisplay, dmg: dmgToMonster }) || ('对 ' + monster.type + ' 造成 ' + dmgToMonster + ' 伤害')) : ('对 ' + monster.type + ' 造成 ' + dmgToMonster + ' 伤害'), 0.9);
+    showMessage((window.i18n && window.i18n.t('rpg_msg_deal_damage', { monster: monsterDisplay, dmg: dmgToMonster })) || ('对 ' + monster.type + ' 造成 ' + dmgToMonster + ' 伤害'), 0.9, 'rpg_msg_deal_damage', { monster: monsterDisplay, dmg: dmgToMonster });
     playSound('attack');
     if (monster.hp <= 0) {
       monster.alive = false;
       state.player.exp += monster.exp;
-      showMessage(window.i18n ? (window.i18n.t('rpg_msg_defeat_monster', { monster: monsterDisplay, exp: monster.exp }) || ('击败 ' + monster.type + '! +' + monster.exp + ' EXP')) : ('击败 ' + monster.type + '! +' + monster.exp + ' EXP'), 1.5);
+      showMessage((window.i18n && window.i18n.t('rpg_msg_defeat_monster', { monster: monsterDisplay, exp: monster.exp })) || ('击败 ' + monster.type + '! +' + monster.exp + ' EXP'), 1.5, 'rpg_msg_defeat_monster', { monster: monsterDisplay, exp: monster.exp });
       playSound('win');
       checkLevelUp();
       return;
@@ -1106,10 +1110,10 @@ window.PixelRPG = (function () {
     if (state.player.hp <= 0) {
       state.player.hp = 0;
       state.gameOver = true;
-      showMessage(window.i18n ? (window.i18n.t('rpg_msg_player_defeated') || '你被击败了... 游戏结束') : '你被击败了... 游戏结束', 3);
+      showMessage((window.i18n && window.i18n.t('rpg_msg_player_defeated')) || '你被击败了... 游戏结束', 3, 'rpg_msg_player_defeated');
       stopBGM();
     } else {
-      showMessage(window.i18n ? (window.i18n.t('rpg_msg_monster_counter', { monster: monsterDisplay, dmg: dmgToPlayer }) || (monster.type + ' 反击 ' + dmgToPlayer + ' 伤害')) : (monster.type + ' 反击 ' + dmgToPlayer + ' 伤害'), 0.8);
+      showMessage((window.i18n && window.i18n.t('rpg_msg_monster_counter', { monster: monsterDisplay, dmg: dmgToPlayer })) || (monster.type + ' 反击 ' + dmgToPlayer + ' 伤害'), 0.8, 'rpg_msg_monster_counter', { monster: monsterDisplay, dmg: dmgToPlayer });
     }
   }
 
@@ -1152,13 +1156,13 @@ window.PixelRPG = (function () {
         state.player.inventory.push(old);
       } else {
         state.player.inventory.push(item);
-        showMessage(window.i18n ? (window.i18n.t('rpg_msg_inventory_full_equip') || '背包已满! 无法更换装备') : '背包已满! 无法更换装备', 2);
+        showMessage((window.i18n && window.i18n.t('rpg_msg_inventory_full_equip')) || '背包已满! 无法更换装备', 2, 'rpg_msg_inventory_full_equip');
         return;
       }
     }
     state.player.equipment[slot] = item;
     var itemDisplay = getItemDisplayName(item);
-    showMessage(window.i18n ? (window.i18n.t('rpg_msg_equip_item', { name: itemDisplay }) || ('装备: ' + item.name)) : ('装备: ' + item.name), 1.5);
+    showMessage((window.i18n && window.i18n.t('rpg_msg_equip_item', { name: itemDisplay })) || ('装备: ' + item.name), 1.5, 'rpg_msg_equip_item', { name: itemDisplay });
     renderInventory();
     renderEquipment();
     renderItemDetails();
@@ -1171,13 +1175,13 @@ window.PixelRPG = (function () {
     const item = state.player.equipment[slotKey];
     if (!item) return;
     if (state.player.inventory.length >= state.player.inventoryMax) {
-      showMessage(window.i18n ? (window.i18n.t('rpg_msg_inventory_full_unequip') || '背包已满! 无法卸下') : '背包已满! 无法卸下', 2);
+      showMessage((window.i18n && window.i18n.t('rpg_msg_inventory_full_unequip')) || '背包已满! 无法卸下', 2, 'rpg_msg_inventory_full_unequip');
       return;
     }
     state.player.inventory.push(item);
     state.player.equipment[slotKey] = null;
     var itemDisplay = getItemDisplayName(item);
-    showMessage(window.i18n ? (window.i18n.t('rpg_msg_unequip_item', { name: itemDisplay }) || ('卸下: ' + item.name)) : ('卸下: ' + item.name), 1.5);
+    showMessage((window.i18n && window.i18n.t('rpg_msg_unequip_item', { name: itemDisplay })) || ('卸下: ' + item.name), 1.5, 'rpg_msg_unequip_item', { name: itemDisplay });
     renderInventory();
     renderEquipment();
     renderItemDetails();
@@ -1191,14 +1195,14 @@ window.PixelRPG = (function () {
     var itemDisplay = getItemDisplayName(item);
     if (item.effect && item.effect.hp) {
       if (state.player.hp >= state.player.maxHp) {
-        showMessage(window.i18n ? (window.i18n.t('rpg_msg_hp_full') || 'HP 已满') : 'HP 已满', 1.5);
+        showMessage((window.i18n && window.i18n.t('rpg_msg_hp_full')) || 'HP 已满', 1.5, 'rpg_msg_hp_full');
         return;
       }
       state.player.hp = Math.min(state.player.maxHp, state.player.hp + item.effect.hp);
-      showMessage(window.i18n ? (window.i18n.t('rpg_msg_use_hp_item', { name: itemDisplay, hp: item.effect.hp }) || ('使用 ' + item.name + '! +' + item.effect.hp + ' HP')) : ('使用 ' + item.name + '! +' + item.effect.hp + ' HP'), 1.5);
+      showMessage((window.i18n && window.i18n.t('rpg_msg_use_hp_item', { name: itemDisplay, hp: item.effect.hp })) || ('使用 ' + item.name + '! +' + item.effect.hp + ' HP'), 1.5, 'rpg_msg_use_hp_item', { name: itemDisplay, hp: item.effect.hp });
     } else if (item.effect && item.effect.exp) {
       state.player.exp += item.effect.exp;
-      showMessage(window.i18n ? (window.i18n.t('rpg_msg_use_exp_item', { name: itemDisplay, exp: item.effect.exp }) || ('使用 ' + item.name + '! +' + item.effect.exp + ' EXP')) : ('使用 ' + item.name + '! +' + item.effect.exp + ' EXP'), 1.5);
+      showMessage((window.i18n && window.i18n.t('rpg_msg_use_exp_item', { name: itemDisplay, exp: item.effect.exp })) || ('使用 ' + item.name + '! +' + item.effect.exp + ' EXP'), 1.5, 'rpg_msg_use_exp_item', { name: itemDisplay, exp: item.effect.exp });
       checkLevelUp();
     }
     if (item.count && item.count > 1) {
@@ -1227,7 +1231,7 @@ window.PixelRPG = (function () {
     // 经验宝石即时消耗
     if (tpl.instant && tpl.effect && tpl.effect.exp) {
       state.player.exp += tpl.effect.exp;
-      showMessage(window.i18n ? (window.i18n.t('rpg_msg_chest_exp_gem', { exp: tpl.effect.exp }) || ('宝箱: 经验宝石! +' + tpl.effect.exp + ' EXP')) : ('宝箱: 经验宝石! +' + tpl.effect.exp + ' EXP'), 2);
+      showMessage((window.i18n && window.i18n.t('rpg_msg_chest_exp_gem', { exp: tpl.effect.exp })) || ('宝箱: 经验宝石! +' + tpl.effect.exp + ' EXP'), 2, 'rpg_msg_chest_exp_gem', { exp: tpl.effect.exp });
       checkLevelUp();
       playSound('chest');
       if (typeof renderInventory === 'function') renderInventory();
@@ -1238,7 +1242,7 @@ window.PixelRPG = (function () {
     // 背包满检查
     if (state.player.inventory.length >= state.player.inventoryMax) {
       var tplDisplay = getItemDisplayName(tpl);
-      showMessage(window.i18n ? (window.i18n.t('rpg_msg_inventory_full_pickup', { name: tplDisplay }) || ('背包已满! 无法拾取 ' + tpl.name)) : ('背包已满! 无法拾取 ' + tpl.name), 2);
+      showMessage((window.i18n && window.i18n.t('rpg_msg_inventory_full_pickup', { name: tplDisplay })) || ('背包已满! 无法拾取 ' + tpl.name), 2, 'rpg_msg_inventory_full_pickup', { name: tplDisplay });
       playSound('chest');
       return;
     }
@@ -1275,7 +1279,7 @@ window.PixelRPG = (function () {
     }
 
     var newTplDisplay = getItemDisplayName(tpl);
-    showMessage(window.i18n ? (window.i18n.t('rpg_msg_chest_get', { name: newTplDisplay }) || ('宝箱: 获得 ' + tpl.name + '!')) : ('宝箱: 获得 ' + tpl.name + '!'), 2);
+    showMessage((window.i18n && window.i18n.t('rpg_msg_chest_get', { name: newTplDisplay })) || ('宝箱: 获得 ' + tpl.name + '!'), 2, 'rpg_msg_chest_get', { name: newTplDisplay });
     playSound('chest');
     if (typeof renderInventory === 'function') renderInventory();
     if (typeof renderItemDetails === 'function') renderItemDetails();
@@ -1293,7 +1297,7 @@ window.PixelRPG = (function () {
       state.player.atk += 2;
       state.player.def += 1;
       state.player.expToNext = Math.floor(state.player.expToNext * 1.5);
-      showMessage(window.i18n ? (window.i18n.t('rpg_msg_level_up', { level: state.player.level }) || ('升级! 等级 ' + state.player.level + ' (HP/ATK/DEF 提升)')) : ('升级! 等级 ' + state.player.level + ' (HP/ATK/DEF 提升)'), 2);
+      showMessage((window.i18n && window.i18n.t('rpg_msg_level_up', { level: state.player.level })) || ('升级! 等级 ' + state.player.level + ' (HP/ATK/DEF 提升)'), 2, 'rpg_msg_level_up', { level: state.player.level });
       playSound('levelup');
     }
   }
@@ -1398,13 +1402,20 @@ window.PixelRPG = (function () {
    * 绘制消息提示（顶部居中）。
    */
   function drawMessage() {
-    if (!state.message) return;
+    var displayText = state.message;
+    if (state.messageKey && typeof window !== 'undefined' && window.i18n) {
+      var translated = window.i18n.t(state.messageKey, state.messageParams || {});
+      if (translated && translated !== state.messageKey) {
+        displayText = translated;
+      }
+    }
+    if (!displayText) return;
     ctx.font = '13px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const x = CANVAS_W / 2;
     const y = UI_HEIGHT + 24;
-    const w = ctx.measureText(state.message).width + 20;
+    const w = ctx.measureText(displayText).width + 20;
     // 背景框
     ctx.fillStyle = 'rgba(0,0,0,0.75)';
     ctx.fillRect(x - w / 2, y - 12, w, 24);
@@ -1413,7 +1424,7 @@ window.PixelRPG = (function () {
     ctx.strokeRect(x - w / 2, y - 12, w, 24);
     // 文字
     ctx.fillStyle = COLOR.TEXT;
-    ctx.fillText(state.message, x, y);
+    ctx.fillText(displayText, x, y);
     ctx.textAlign = 'left';
   }
 
@@ -1452,7 +1463,11 @@ window.PixelRPG = (function () {
     // 消息计时
     if (state.messageTimer > 0) {
       state.messageTimer -= dt;
-      if (state.messageTimer <= 0) state.message = '';
+      if (state.messageTimer <= 0) {
+        state.message = '';
+        state.messageKey = null;
+        state.messageParams = null;
+      }
     }
     // 玩家移动动画（网格间插值）
     if (state.player.moving) {
@@ -1501,7 +1516,7 @@ window.PixelRPG = (function () {
           state.player.attackTarget = blockingMonster;
           faceTowards(blockingMonster.gx, blockingMonster.gy);
           var bmDisplay = getMonsterDisplayName(blockingMonster);
-          showMessage(window.i18n ? (window.i18n.t('rpg_msg_blocked_by_monster', { monster: bmDisplay }) || ('前方有 ' + blockingMonster.type + '！攻击(空格)或绕路')) : ('前方有 ' + blockingMonster.type + '！攻击(空格)或绕路'), 2);
+          showMessage((window.i18n && window.i18n.t('rpg_msg_blocked_by_monster', { monster: bmDisplay })) || ('前方有 ' + blockingMonster.type + '！攻击(空格)或绕路'), 2, 'rpg_msg_blocked_by_monster', { monster: bmDisplay });
         } else {
           tryMove(dx, dy);
           if (state.player.moving) {
@@ -1755,7 +1770,9 @@ window.PixelRPG = (function () {
     };
     state.level = 1;
     state.gameOver = false;
-    state.message = window.i18n ? (window.i18n.t('rpg_floor_start') || '开始地牢冒险! 找到向下走廊进入下一层') : '开始地牢冒险! 找到向下走廊进入下一层';
+    state.message = (typeof window !== 'undefined' && window.i18n && window.i18n.t('rpg_floor_start')) || '开始地牢冒险! 找到向下走廊进入下一层';
+    state.messageKey = 'rpg_floor_start';
+    state.messageParams = null;
     state.messageTimer = 3;
     state.animTime = 0;
     generateMap(1);
@@ -2109,7 +2126,7 @@ window.PixelRPG = (function () {
       // 检查物品槽位是否匹配（weapon 可放 leftHand 或 rightHand）
       const slotMatch = (item.slot === key) || (item.type === 'weapon' && (key === 'leftHand' || key === 'rightHand') && (item.slot === 'leftHand' || item.slot === 'rightHand'));
       if (!slotMatch) {
-        showMessage(window.i18n ? (window.i18n.t('rpg_msg_cannot_equip_slot') || '无法装备到此槽位') : '无法装备到此槽位', 1.5);
+        showMessage((window.i18n && window.i18n.t('rpg_msg_cannot_equip_slot')) || '无法装备到此槽位', 1.5, 'rpg_msg_cannot_equip_slot');
         state.player.selectedSlot = null;
         renderInventory();
         renderEquipment();
@@ -2125,7 +2142,7 @@ window.PixelRPG = (function () {
       }
       state.player.equipment[key] = item;
       var slotItemDisplay = getItemDisplayName(item);
-      showMessage(window.i18n ? (window.i18n.t('rpg_msg_equip_item', { name: slotItemDisplay }) || ('装备: ' + item.name)) : ('装备: ' + item.name), 1.5);
+      showMessage((window.i18n && window.i18n.t('rpg_msg_equip_item', { name: slotItemDisplay })) || ('装备: ' + item.name), 1.5, 'rpg_msg_equip_item', { name: slotItemDisplay });
       state.player.selectedSlot = null;
       renderInventory();
       renderEquipment();
@@ -2147,7 +2164,7 @@ window.PixelRPG = (function () {
         // 交换：背包物品装备到装备槽，装备槽物品到背包
         const slotMatch = (targetItem.slot === sel.key) || (targetItem.type === 'weapon' && (sel.key === 'leftHand' || sel.key === 'rightHand'));
         if (!slotMatch) {
-          showMessage(window.i18n ? (window.i18n.t('rpg_msg_swap_type_mismatch') || '无法交换：类型不匹配') : '无法交换：类型不匹配', 1.5);
+          showMessage((window.i18n && window.i18n.t('rpg_msg_swap_type_mismatch')) || '无法交换：类型不匹配', 1.5, 'rpg_msg_swap_type_mismatch');
           state.player.selectedSlot = null;
           renderInventory();
           renderEquipment();

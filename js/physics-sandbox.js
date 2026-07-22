@@ -439,12 +439,20 @@ window.PhysicsSandbox = (function () {
   }
 
   // 元素列表（供 UI 构建调色板：{id, name, color}）
+  // name 作为 getter，每次访问时动态调用 i18n.t()，切换语言后自动更新
   const ELEMENTS = [WATER, HYDROGEN, EMPTY].map(function (id) {
-    var rawName = ELEMENT_NAMES[id];
-    var name = (typeof window !== 'undefined' && window.i18n && typeof window.i18n.t === 'function' && ELEMENT_NAME_KEYS[id])
-      ? (window.i18n.t(ELEMENT_NAME_KEYS[id]) || rawName)
-      : rawName;
-    return { id: id, name: name, nameKey: ELEMENT_NAME_KEYS[id], color: HEX_COLORS[id] };
+    return {
+      id: id,
+      nameKey: ELEMENT_NAME_KEYS[id],
+      color: HEX_COLORS[id],
+      get name() {
+        var rawName = ELEMENT_NAMES[this.id];
+        if (typeof window !== 'undefined' && window.i18n && typeof window.i18n.t === 'function' && this.nameKey) {
+          return window.i18n.t(this.nameKey) || rawName;
+        }
+        return rawName;
+      }
+    };
   });
 
   return {
@@ -459,6 +467,14 @@ window.PhysicsSandbox = (function () {
     toggleGas,
     // 附带常量，方便外部引用元素 id
     ELEMENTS,
-    EMPTY, WATER, HYDROGEN
+    EMPTY, WATER, HYDROGEN,
+    // 按 id 动态获取元素名称（i18n），切换语言后实时反映
+    getElementName: function (id) {
+      var rawName = ELEMENT_NAMES[id];
+      if (typeof window !== 'undefined' && window.i18n && typeof window.i18n.t === 'function' && ELEMENT_NAME_KEYS[id]) {
+        return window.i18n.t(ELEMENT_NAME_KEYS[id]) || rawName;
+      }
+      return rawName;
+    }
   };
 })();
